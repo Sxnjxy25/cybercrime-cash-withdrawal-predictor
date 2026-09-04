@@ -1,0 +1,74 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from app.db.database import get_db
+from app.models.all_models import User, AuditLog
+from app.schemas.schemas import UserLogin, Token, UserOut
+from app.services.auth_service import verify_password, create_access_token, get_current_user
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.post("/login", response_model=Token)
+def login(login_data: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == login_data.username).first()
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        audit = AuditLog(
+            username=login_data.username,
+            role="UNKNOWN",
+            action="LOGIN_FAILED",
+            resource="/api/v1/auth/login",
+            details="Invalid username or password attempt.",
+            status="FAILED"
+        )
+        db.add(audit)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token = create_access_token(data={"sub": user.username, "role": user.role})
+    
+    audit = AuditLog(
+        username=user.username,
+        role=user.role,
+        action="USER_LOGIN",
+        resource="/api/v1/auth/login",
+        details="User logged into Command Center session successfully.",
+        status="SUCCESS"
+    )
+    db.add(audit)
+    db.commit()
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+            "badge_id": user.badge_id,
+            "state": user.state,
+            "district": user.district
+        }
+    }
+
+@router.get("/me", response_model=UserOut)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    audit = AuditLog(
+        username=current_user.username,
+        role=current_user.role,
+        action="USER_LOGOUT",
+        resource="/api/v1/auth/logout",
+        details="User ended session.",
+        status="SUCCESS"
+    )
+    db.add(audit)
+    db.commit()
+    return {"message": "Logged out successfully"}

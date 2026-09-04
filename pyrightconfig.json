@@ -1,0 +1,13 @@
+{
+  "venvPath": "C:/Users/saash/OneDrive/Desktop/SIH/backend",
+  "venv": "venv",
+  "extraPaths": [
+    "C:/Users/saash/OneDrive/Desktop/SIH/backend/venv/Lib/site-packages",
+    "C:/Users/saash/OneDrive/Desktop/SIH/backend",
+    "backend/venv/Lib/site-packages",
+    "backend"
+  ],
+  "include": [
+    "backend"
+  ]
+}
