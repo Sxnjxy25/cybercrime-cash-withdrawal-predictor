@@ -20,31 +20,5 @@ CYBERPREDICT X is an India-focused predictive cybercrime intelligence platform d
 ---
 
 ## 🚀 Quick Start Guide
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-
-### Running Backend (FastAPI + ML Stack)
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-python -m app.seed     # Seed 1,000 synthetic complaints & initial models
-uvicorn app.main:app --reload --port 8000
-```
-- API Docs: `http://127.0.0.1:8000/docs`
-
-### Running Frontend (Next.js 14 Command Center)
-```bash
-cd frontend
-npm install --legacy-peer-deps
-npm run dev
-```
-- Command Center UI: `http://localhost:3000`
-
----
-
 ## 🛡️ Responsible AI Boundary
 The platform predicts cybercrime trends, spatial-temporal anomalies, threat clusters, and risk scores. Outputs are strictly decision-support signals tagged as `OBSERVED`, `PREDICTED`, `CORRELATED`, `RECOMMENDED`, or `CONFIRMED`. The platform does NOT assert individual criminal guilt or identity.
