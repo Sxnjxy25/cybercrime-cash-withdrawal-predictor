@@ -17,7 +17,7 @@ export const CopilotDrawer: React.FC<CopilotProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<any[]>([
     {
       sender: "COPILOT",
-      text: "CYBERPREDICT OBSIDIAN AI COPILOT initialized. Ask any empirical question about live cybercrime risk, regional anomalies, active threat clusters, or forecasts.",
+      text: "CYBERPREDICT AI COPILOT initialized. Ask any empirical question about live cybercrime risk, regional anomalies, active threat clusters, or forecasts.",
       evidence: [],
       metrics: { status: "ONLINE" }
     }
@@ -69,21 +69,21 @@ export const CopilotDrawer: React.FC<CopilotProps> = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#090909]/80 backdrop-blur-sm flex justify-end font-mono">
-      <div className="w-full max-w-lg bg-[#0D0D0F] border-l border-[#242428] p-5 h-full flex flex-col justify-between shadow-2xl glass-obsidian-violet">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-end font-sans">
+      <div className="w-full max-w-lg bg-white border-l border-slate-200 p-5 h-full flex flex-col justify-between shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3 mb-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/40">
+            <div className="p-2 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
               <Bot className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-[#F5F2EA] tracking-wide uppercase">AI COPILOT</h2>
-              <p className="text-[10px] text-[#8B5CF6] font-mono">OBSIDIAN DATABASE RAG INTELLIGENCE</p>
+              <h2 className="text-sm font-extrabold text-slate-900 tracking-wide uppercase font-mono">AI COPILOT</h2>
+              <p className="text-[10px] text-purple-700 font-mono">DATABASE RAG INTELLIGENCE</p>
             </div>
           </div>
 
-          <button onClick={onClose} className="text-[#A6A19A] hover:text-[#F5F2EA] p-1 rounded-lg">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -95,72 +95,74 @@ export const CopilotDrawer: React.FC<CopilotProps> = ({ isOpen, onClose }) => {
               key={idx}
               className={`p-3 rounded-xl text-xs max-w-[90%] leading-relaxed ${
                 m.sender === "USER"
-                  ? "bg-[#8B5CF6]/20 text-[#F5F2EA] border border-[#8B5CF6]/40 ml-auto"
-                  : "bg-[#121214] text-[#F5F2EA] border border-[#242428] mr-auto"
+                  ? "bg-[#005A9C] text-white ml-auto"
+                  : "bg-slate-50 text-slate-800 border border-slate-200 mr-auto"
               }`}
             >
-              <div className="flex items-center justify-between mb-1 text-[10px] font-mono text-[#A6A19A]">
-                <span className="font-bold">{m.sender}</span>
-                {m.sender === "COPILOT" && <span className="text-[#8B5CF6] font-bold">100% FACTUAL</span>}
+              <div className="flex items-center space-x-1.5 mb-1 text-[10px] font-mono">
+                <span className={m.sender === "USER" ? "text-blue-100 font-bold" : "text-[#005A9C] font-bold"}>
+                  {m.sender === "USER" ? "COMMAND OFFICER" : "AI INTELLIGENCE CORE"}
+                </span>
               </div>
+              <p className="whitespace-pre-line">{m.text}</p>
 
-              <p>{m.text}</p>
-
-              {m.drill_down_actions && m.drill_down_actions.length > 0 && (
-                <div className="mt-2.5 pt-2 border-t border-[#242428] flex flex-wrap gap-1.5">
-                  {m.drill_down_actions.map((act: any, aIdx: number) => (
-                    <span
-                      key={aIdx}
-                      className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/30 cursor-pointer"
-                    >
-                      {act.label} →
-                    </span>
-                  ))}
+              {/* Evidence citations */}
+              {m.evidence && m.evidence.length > 0 && (
+                <div className="mt-2.5 pt-2 border-t border-slate-200/60 text-[10px] font-mono">
+                  <span className="text-slate-500 font-bold block mb-1">EMPIRICAL EVIDENCE RETRIEVED:</span>
+                  <ul className="list-disc list-inside space-y-0.5 text-slate-600">
+                    {m.evidence.map((ev: string, i: number) => (
+                      <li key={i} className="truncate">{ev}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
           ))}
 
           {loading && (
-            <div className="bg-[#121214] p-3 rounded-xl text-xs text-[#8B5CF6] font-mono flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 animate-spin text-[#8B5CF6]" />
-              <span>Querying database metrics & running ML engines...</span>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center space-x-2 font-mono">
+              <span className="w-2 h-2 rounded-full bg-purple-600 animate-ping" />
+              <span>Synthesizing intelligence telemetry...</span>
             </div>
           )}
         </div>
 
-        {/* Suggested Quick Questions */}
-        <div className="mb-3 space-y-1">
-          <p className="text-[10px] font-mono text-[#A6A19A] uppercase">SUGGESTED QUESTIONS:</p>
-          <div className="flex flex-wrap gap-1">
-            {sampleQuestions.map((q, qIdx) => (
+        {/* Suggested Queries */}
+        <div className="space-y-2 pt-2 border-t border-slate-100">
+          <span className="text-[10px] font-mono text-slate-500">QUICK INTELLIGENCE QUERIES:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {sampleQuestions.map((q, i) => (
               <button
-                key={qIdx}
-                onClick={() => setInputQuery(q)}
-                className="px-2 py-1 bg-[#121214] hover:bg-[#171719] text-[10px] text-[#A6A19A] rounded border border-[#242428]"
+                key={i}
+                onClick={() => {
+                  setInputQuery(q);
+                }}
+                className="text-[10px] bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-md transition-all cursor-pointer font-mono"
               >
                 {q}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Input Bar */}
-        <div className="flex items-center space-x-2 pt-2 border-t border-[#1F1F23]">
-          <input
-            type="text"
-            value={inputQuery}
-            onChange={(e) => setInputQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask Copilot about risk, threats, or forecasts..."
-            className="flex-1 bg-[#090909] text-xs text-[#F5F2EA] px-3 py-2 rounded-lg border border-[#242428] focus:outline-none focus:border-[#8B5CF6]"
-          />
-          <button
-            onClick={handleSend}
-            className="p-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-[#090909] font-bold rounded-lg transition-all"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {/* Input Box */}
+          <div className="flex items-center space-x-2 pt-2">
+            <input
+              type="text"
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Ask Copilot about trends, risks, anomalies..."
+              className="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#005A9C] focus:bg-white font-mono"
+            />
+            <button
+              onClick={handleSend}
+              disabled={loading || !inputQuery.trim()}
+              className="p-2 rounded-lg bg-[#005A9C] hover:bg-[#00487D] text-white disabled:opacity-40 transition-all cursor-pointer shadow-sm"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

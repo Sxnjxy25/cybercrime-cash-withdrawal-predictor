@@ -40,7 +40,7 @@ export function GlobalThreatCore() {
       baseX: number;
       baseY: number;
       baseZ: number;
-      type: "CRIMSON" | "VIOLET" | "AMBER" | "IVORY";
+      type: "CRIMSON" | "VIOLET" | "AMBER" | "BLUE";
       label?: string;
       size: number;
       pulseSpeed: number;
@@ -59,10 +59,10 @@ export function GlobalThreatCore() {
       const baseZ = radius * Math.cos(phi);
 
       const typeRand = Math.random();
-      let type: "CRIMSON" | "VIOLET" | "AMBER" | "IVORY" = "IVORY";
-      if (typeRand < 0.4) type = "CRIMSON";
-      else if (typeRand < 0.7) type = "VIOLET";
-      else if (typeRand < 0.9) type = "AMBER";
+      let type: "CRIMSON" | "VIOLET" | "AMBER" | "BLUE" = "BLUE";
+      if (typeRand < 0.35) type = "CRIMSON";
+      else if (typeRand < 0.65) type = "VIOLET";
+      else if (typeRand < 0.85) type = "AMBER";
 
       particles.push({
         x: baseX,
@@ -72,7 +72,7 @@ export function GlobalThreatCore() {
         baseY,
         baseZ,
         type,
-        label: i % 10 === 0 ? labels[i / 10 % labels.length] : undefined,
+        label: i % 10 === 0 ? labels[(i / 10) % labels.length] : undefined,
         size: Math.random() * 3 + 2,
         pulseSpeed: Math.random() * 0.03 + 0.01,
         pulseOffset: Math.random() * Math.PI * 2,
@@ -98,11 +98,11 @@ export function GlobalThreatCore() {
       const cosX = Math.cos(angleX);
       const sinX = Math.sin(angleX);
 
-      // Ambient background glow (obsidian center + violet/crimson aura)
+      // Ambient background gradient for light canvas
       const grad = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius * 1.3);
-      grad.addColorStop(0, "rgba(255, 48, 79, 0.08)");
-      grad.addColorStop(0.5, "rgba(139, 92, 246, 0.04)");
-      grad.addColorStop(1, "rgba(9, 9, 9, 0)");
+      grad.addColorStop(0, "rgba(0, 90, 156, 0.05)");
+      grad.addColorStop(0.5, "rgba(220, 38, 38, 0.03)");
+      grad.addColorStop(1, "rgba(255, 255, 255, 0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
@@ -126,7 +126,7 @@ export function GlobalThreatCore() {
       projected.sort((a, b) => a.pz - b.pz);
 
       // Draw wireframe connecting arcs between close nodes
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 0.7;
       for (let i = 0; i < projected.length; i++) {
         for (let j = i + 1; j < projected.length; j++) {
           const p1 = projected[i];
@@ -138,13 +138,15 @@ export function GlobalThreatCore() {
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < 65) {
-            const alpha = (1 - dist / 65) * 0.2 * Math.max(0, (p1.pz + radius) / (2 * radius));
+            const alpha = (1 - dist / 65) * 0.3 * Math.max(0.1, (p1.pz + radius) / (2 * radius));
             if (p1.type === "CRIMSON" || p2.type === "CRIMSON") {
-              ctx.strokeStyle = `rgba(255, 48, 79, ${alpha * 1.5})`;
+              ctx.strokeStyle = `rgba(220, 38, 38, ${alpha * 1.5})`;
             } else if (p1.type === "VIOLET" || p2.type === "VIOLET") {
-              ctx.strokeStyle = `rgba(139, 92, 246, ${alpha * 1.5})`;
+              ctx.strokeStyle = `rgba(124, 58, 237, ${alpha * 1.5})`;
+            } else if (p1.type === "AMBER" || p2.type === "AMBER") {
+              ctx.strokeStyle = `rgba(217, 119, 6, ${alpha * 1.5})`;
             } else {
-              ctx.strokeStyle = `rgba(245, 242, 234, ${alpha * 0.8})`;
+              ctx.strokeStyle = `rgba(0, 90, 156, ${alpha * 1.2})`;
             }
             ctx.beginPath();
             ctx.moveTo(p1.px, p1.py);
@@ -158,26 +160,26 @@ export function GlobalThreatCore() {
       projected.forEach((p) => {
         const pulse = Math.sin(time * p.pulseSpeed + p.pulseOffset) * 0.5 + 0.5;
         const size = (p.size + pulse * 2) * p.scale;
-        const alpha = Math.max(0.25, (p.pz + radius) / (2 * radius));
+        const alpha = Math.max(0.35, (p.pz + radius) / (2 * radius));
 
         ctx.beginPath();
-        ctx.arc(p.px, p.py, Math.max(1, size), 0, Math.PI * 2);
+        ctx.arc(p.px, p.py, Math.max(1.5, size), 0, Math.PI * 2);
 
         if (p.type === "CRIMSON") {
-          ctx.fillStyle = `rgba(255, 48, 79, ${alpha})`;
-          ctx.shadowColor = "#FF304F";
-          ctx.shadowBlur = 12 * p.scale;
-        } else if (p.type === "VIOLET") {
-          ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
-          ctx.shadowColor = "#8B5CF6";
-          ctx.shadowBlur = 10 * p.scale;
-        } else if (p.type === "AMBER") {
-          ctx.fillStyle = `rgba(245, 158, 11, ${alpha})`;
-          ctx.shadowColor = "#F59E0B";
+          ctx.fillStyle = `rgba(220, 38, 38, ${alpha})`;
+          ctx.shadowColor = "#DC2626";
           ctx.shadowBlur = 8 * p.scale;
+        } else if (p.type === "VIOLET") {
+          ctx.fillStyle = `rgba(124, 58, 237, ${alpha})`;
+          ctx.shadowColor = "#7C3AED";
+          ctx.shadowBlur = 8 * p.scale;
+        } else if (p.type === "AMBER") {
+          ctx.fillStyle = `rgba(217, 119, 6, ${alpha})`;
+          ctx.shadowColor = "#D97706";
+          ctx.shadowBlur = 6 * p.scale;
         } else {
-          ctx.fillStyle = `rgba(245, 242, 234, ${alpha * 0.8})`;
-          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(0, 90, 156, ${alpha})`;
+          ctx.shadowBlur = 6 * p.scale;
         }
 
         ctx.fill();
@@ -185,8 +187,8 @@ export function GlobalThreatCore() {
 
         // Label rendering for front-facing key nodes
         if (p.label && p.pz > 0 && alpha > 0.6) {
-          ctx.font = '9px monospace';
-          ctx.fillStyle = `rgba(245, 242, 234, ${alpha * 0.9})`;
+          ctx.font = 'bold 9px monospace';
+          ctx.fillStyle = `rgba(15, 23, 42, ${alpha * 0.9})`;
           ctx.fillText(p.label, p.px + 8, p.py + 3);
         }
       });
@@ -203,24 +205,24 @@ export function GlobalThreatCore() {
   }, []);
 
   return (
-    <div className="relative w-full rounded-xl bg-[#0D0D0F] border border-[#242428] p-4 glass-obsidian-crimson overflow-hidden flex flex-col justify-between">
+    <div className="relative w-full rounded-xl bg-white border border-slate-200 border-t-4 border-t-[#005A9C] p-4 shadow-sm overflow-hidden flex flex-col justify-between">
       {/* Header Bar */}
-      <div className="flex items-center justify-between z-10">
+      <div className="flex items-center justify-between z-10 font-sans">
         <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-lg bg-[#FF304F]/10 border border-[#FF304F]/30 text-[#FF304F]">
+          <div className="p-1.5 rounded-lg bg-blue-50 border border-blue-200 text-[#005A9C]">
             <Shield className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider text-[#A6A19A] block uppercase">
+            <span className="text-[10px] font-mono tracking-wider text-[#005A9C] font-semibold block uppercase">
               3D INTELLIGENCE CORE
             </span>
-            <h2 className="text-sm font-extrabold tracking-tight text-[#F5F2EA] uppercase font-mono">
+            <h2 className="text-sm font-extrabold tracking-tight text-slate-900 uppercase font-mono">
               GLOBAL THREAT SPHERE
             </h2>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#FF304F]/15 text-[#FF304F] border border-[#FF304F]/40 crimson-pulse">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-[#005A9C] border border-blue-200">
             LIVE ORBITAL FEED
           </span>
         </div>
@@ -231,25 +233,25 @@ export function GlobalThreatCore() {
         <canvas ref={canvasRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
         {/* Floating Center Overlay Badge */}
-        <div className="absolute pointer-events-none text-center bg-[#090909]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#242428]">
-          <span className="text-[9px] font-mono text-[#A6A19A] block">THREAT DENSITY</span>
-          <span className="text-xs font-bold font-mono text-[#FF304F]">HIGH RISK AGGREGATION</span>
+        <div className="absolute pointer-events-none text-center bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+          <span className="text-[9px] font-mono text-slate-500 block">THREAT DENSITY</span>
+          <span className="text-xs font-bold font-mono text-red-600">HIGH RISK AGGREGATION</span>
         </div>
       </div>
 
       {/* Metadata Telemetry Footer */}
-      <div className="grid grid-cols-3 gap-2 border-t border-[#1F1F23] pt-3 z-10 font-mono text-xs">
-        <div className="bg-[#121214] p-2 rounded border border-[#242428]">
-          <span className="text-[9px] text-[#A6A19A] block">ACTIVE SIGNALS</span>
-          <span className="font-bold text-[#FF304F]">{coreStats.activeThreats} NODES</span>
+      <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 z-10 font-mono text-xs">
+        <div className="bg-slate-50 p-2 rounded border border-slate-200 text-center">
+          <span className="text-[9px] text-slate-500 block">ACTIVE SIGNALS</span>
+          <span className="font-bold text-red-600">{coreStats.activeThreats} NODES</span>
         </div>
-        <div className="bg-[#121214] p-2 rounded border border-[#242428]">
-          <span className="text-[9px] text-[#A6A19A] block">AI FORECAST ACCURACY</span>
-          <span className="font-bold text-[#8B5CF6]">{coreStats.predictionConfidence}%</span>
+        <div className="bg-slate-50 p-2 rounded border border-slate-200 text-center">
+          <span className="text-[9px] text-slate-500 block">AI FORECAST ACCURACY</span>
+          <span className="font-bold text-purple-700">{coreStats.predictionConfidence}%</span>
         </div>
-        <div className="bg-[#121214] p-2 rounded border border-[#242428]">
-          <span className="text-[9px] text-[#A6A19A] block">ANOMALY PULSES</span>
-          <span className="font-bold text-[#F59E0B]">{coreStats.anomaliesDetected} / SEC</span>
+        <div className="bg-slate-50 p-2 rounded border border-slate-200 text-center">
+          <span className="text-[9px] text-slate-500 block">ANOMALY PULSES</span>
+          <span className="font-bold text-amber-700">{coreStats.anomaliesDetected} / SEC</span>
         </div>
       </div>
     </div>

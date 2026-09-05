@@ -17,22 +17,22 @@ export function PredictionHorizon({ data }: PredictionHorizonProps) {
   ];
 
   return (
-    <div className="relative w-full rounded-xl bg-[#0D0D0F] border border-[#242428] p-5 glass-obsidian-violet flex flex-col justify-between space-y-4">
+    <div className="relative w-full rounded-xl bg-white border border-slate-200 border-t-4 border-t-[#005A9C] p-5 shadow-sm flex flex-col justify-between space-y-4 font-sans">
       {/* Header Bar */}
       <div className="flex items-center justify-between font-mono">
         <div className="flex items-center space-x-2">
-          <div className="p-1 rounded bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">
+          <div className="p-1.5 rounded-lg bg-blue-50 border border-blue-200 text-[#005A9C]">
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] text-[#A6A19A] block uppercase">PREDICTIVE ANALYTICS</span>
-            <h3 className="text-xs font-bold text-[#F5F2EA] uppercase font-mono tracking-tight">
+            <span className="text-[10px] text-slate-500 block uppercase font-bold">PREDICTIVE ANALYTICS</span>
+            <h3 className="text-xs font-bold text-[#005A9C] uppercase font-mono tracking-tight">
               PREDICTION HORIZON (24H / 7D / 30D)
             </h3>
           </div>
         </div>
         <div className="flex items-center space-x-2 text-[10px]">
-          <span className="px-2 py-0.5 rounded font-bold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30">
+          <span className="px-2 py-0.5 rounded font-bold bg-purple-50 text-purple-700 border border-purple-200">
             AI MODEL CONFIDENCE: 88.4%
           </span>
         </div>
@@ -40,25 +40,25 @@ export function PredictionHorizon({ data }: PredictionHorizonProps) {
 
       {/* Timeline Steps Indicator */}
       <div className="grid grid-cols-4 gap-2 font-mono text-[10px]">
-        <div className="bg-[#121214] p-2 rounded border border-[#242428] text-center">
-          <span className="text-[#A6A19A] block text-[9px]">TIMELINE</span>
-          <span className="font-extrabold text-[#F5F2EA] text-xs">NOW</span>
-          <span className="text-[9px] text-[#F5F2EA]/70 block mt-0.5">428 INCIDENTS</span>
+        <div className="bg-slate-50 p-2 rounded border border-slate-200 text-center">
+          <span className="text-slate-500 block text-[9px]">TIMELINE</span>
+          <span className="font-extrabold text-slate-900 text-xs">NOW</span>
+          <span className="text-[9px] text-slate-600 block mt-0.5">428 INCIDENTS</span>
         </div>
-        <div className="bg-[#121214] p-2 rounded border border-[#8B5CF6]/30 text-center">
-          <span className="text-[#A6A19A] block text-[9px]">SHORT HORIZON</span>
-          <span className="font-extrabold text-[#8B5CF6] text-xs">+24 HOURS</span>
-          <span className="text-[9px] text-[#8B5CF6] block mt-0.5">480 EST.</span>
+        <div className="bg-purple-50/50 p-2 rounded border border-purple-200 text-center">
+          <span className="text-slate-500 block text-[9px]">SHORT HORIZON</span>
+          <span className="font-extrabold text-purple-700 text-xs">+24 HOURS</span>
+          <span className="text-[9px] text-purple-600 block mt-0.5">480 EST.</span>
         </div>
-        <div className="bg-[#121214] p-2 rounded border border-[#F59E0B]/30 text-center">
-          <span className="text-[#A6A19A] block text-[9px]">MID HORIZON</span>
-          <span className="font-extrabold text-[#F59E0B] text-xs">+7 DAYS</span>
-          <span className="text-[9px] text-[#F59E0B] block mt-0.5">547 EST.</span>
+        <div className="bg-amber-50/50 p-2 rounded border border-amber-200 text-center">
+          <span className="text-slate-500 block text-[9px]">MID HORIZON</span>
+          <span className="font-extrabold text-amber-700 text-xs">+7 DAYS</span>
+          <span className="text-[9px] text-amber-700 block mt-0.5">547 EST.</span>
         </div>
-        <div className="bg-[#121214] p-2 rounded border border-[#FF304F]/30 text-center">
-          <span className="text-[#A6A19A] block text-[9px]">LONG HORIZON</span>
-          <span className="font-extrabold text-[#FF304F] text-xs">+30 DAYS</span>
-          <span className="text-[9px] text-[#FF304F] block mt-0.5">685 EST.</span>
+        <div className="bg-red-50/50 p-2 rounded border border-red-200 text-center">
+          <span className="text-slate-500 block text-[9px]">LONG HORIZON</span>
+          <span className="font-extrabold text-red-600 text-xs">+30 DAYS</span>
+          <span className="text-[9px] text-red-600 block mt-0.5">685 EST.</span>
         </div>
       </div>
 
@@ -72,59 +72,60 @@ export function PredictionHorizon({ data }: PredictionHorizonProps) {
               dataKey="upper"
               stroke="none"
               fill="#F59E0B"
-              fillOpacity={0.12}
+              fillOpacity={0.15}
             />
             {/* Main AI Forecast Area */}
             <Area
               type="monotone"
               dataKey="forecast"
-              stroke="#8B5CF6"
+              stroke="#7C3AED"
               strokeWidth={2.5}
-              fill="#8B5CF6"
-              fillOpacity={0.2}
+              fill="#7C3AED"
+              fillOpacity={0.15}
             />
             {/* Historical Baseline */}
             <Area
               type="monotone"
               dataKey="historical"
-              stroke="#F5F2EA"
+              stroke="#005A9C"
               strokeWidth={3}
-              fill="#F5F2EA"
+              fill="#005A9C"
               fillOpacity={0.1}
             />
-            <XAxis dataKey="timeline" stroke="#706C66" tick={{ fill: "#A6A19A", fontSize: 10 }} />
-            <YAxis stroke="#706C66" tick={{ fill: "#A6A19A", fontSize: 10 }} />
+            <XAxis dataKey="timeline" stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 10 }} />
+            <YAxis stroke="#94A3B8" tick={{ fill: "#64748B", fontSize: 10 }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0D0D0F",
-                borderColor: "#8B5CF6",
+                backgroundColor: "#FFFFFF",
+                borderColor: "#E2E8F0",
                 borderRadius: "8px",
-                color: "#F5F2EA",
-                fontSize: "11px",
+                color: "#0F172A",
                 fontFamily: "monospace",
+                fontSize: "11px",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"
               }}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Legend & Risk Horizon Tags */}
-      <div className="flex flex-wrap items-center justify-between text-[10px] font-mono border-t border-[#1F1F23] pt-3 text-[#A6A19A]">
+      {/* Legend & Summary */}
+      <div className="flex flex-wrap items-center justify-between border-t border-slate-100 pt-2 text-[10px] font-mono">
         <div className="flex items-center space-x-3">
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F5F2EA] inline-block" />
+          <span className="flex items-center space-x-1 text-slate-600">
+            <span className="w-2 h-2 rounded-full bg-[#005A9C]" />
             <span>HISTORICAL BASELINE</span>
           </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6] inline-block" />
+          <span className="flex items-center space-x-1 text-purple-700">
+            <span className="w-2 h-2 rounded-full bg-purple-600" />
             <span>AI FORECAST (VIOLET)</span>
           </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] inline-block" />
+          <span className="flex items-center space-x-1 text-amber-700">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
             <span>UNCERTAINTY BOUND (AMBER)</span>
           </span>
         </div>
-        <span className="text-[#FF304F] font-bold">ESCALATION PROBABILITY: HIGH</span>
+        <span className="text-red-600 font-bold">ESCALATION PROBABILITY: HIGH</span>
       </div>
     </div>
   );

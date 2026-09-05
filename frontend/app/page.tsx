@@ -1,6 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { NcrpHeader } from "@/components/NcrpHeader";
+import { NcrpFooter } from "@/components/NcrpFooter";
+import { ComplaintStepper } from "@/components/ComplaintStepper";
+import { ComplaintAcceptanceView } from "@/components/ComplaintAcceptanceView";
+import { CitizenLoginView } from "@/components/CitizenLoginView";
+import { FinancialFraudFormView } from "@/components/FinancialFraudFormView";
+import { ComplaintWithdrawalModal } from "@/components/ComplaintWithdrawalModal";
+import { AdminAuthModal } from "@/components/AdminAuthModal";
+import { AdminComplaintLocationInspector } from "@/components/AdminComplaintLocationInspector";
+import { ComplaintsListView } from "@/components/ComplaintsListView";
+
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { IntelligenceFlow } from "@/components/IntelligenceFlow";
@@ -11,14 +22,26 @@ import { ThreatDNACard } from "@/components/ThreatDNACard";
 import { PredictionHorizon } from "@/components/PredictionHorizon";
 import { EntityGraph } from "@/components/EntityGraph";
 import { ExplainableDrawer } from "@/components/ExplainableDrawer";
-import { CopilotDrawer } from "@/components/CopilotDrawer";
 import { api } from "@/lib/api";
-import {
-  ShieldAlert, TrendingUp, AlertTriangle, Briefcase, Activity,
-  Users, Lock, FileCode2, Cpu, FileSpreadsheet, CheckCircle2, Filter, Zap
-} from "lucide-react";
+import { AlertTriangle, Sparkles, ArrowLeft, ArrowRight, Shield } from "lucide-react";
 
-export default function CommandCenter() {
+export default function FinancialFraudPortal() {
+  // Navigation State strictly for Complaint Registration 1 -> 2 -> 3 + Intelligence Map
+  const [currentView, setCurrentView] = useState<
+    "ACCEPTANCE" | "CHECKLIST_LOGIN" | "CASHOUT_PREDICTOR" | "RISK_MAP_ANALYTICS"
+  >("ACCEPTANCE");
+
+  // Track completed steps strictly (no auto-completion or skipping)
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+
+  // Admin Access Control & Specific Complaint Inspector State
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminOfficer, setAdminOfficer] = useState<any>(null);
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
+  const [pendingComplaintCode, setPendingComplaintCode] = useState<string>("202684910294");
+  const [targetComplaintLocation, setTargetComplaintLocation] = useState<any>(null);
+
   const [activeSection, setActiveSection] = useState("COMMAND_CENTER");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [regionalLocs, setRegionalLocs] = useState<any[]>([]);
@@ -70,7 +93,6 @@ export default function CommandCenter() {
     loadData();
   }, []);
 
-
   const handleSimulateDemo = async () => {
     setIsDemoActive(true);
     await api.simulateEmergingThreat();
@@ -87,7 +109,7 @@ export default function CommandCenter() {
     await api.updateWarningAction(id, action);
     if (action === "INVESTIGATE") {
       await api.createInvestigation({
-        title: "Investigation into Simulated UPI Impersonation Spike",
+        title: "Investigation into UPI Impersonation Syndicate",
         risk_score: 94.0,
         lead_officer: "Insp. Rajesh Kumar",
         summary: "Officer created investigation case from Early Warning alert."
@@ -96,272 +118,444 @@ export default function CommandCenter() {
     await loadData();
   };
 
+  const getStepNumber = (): 1 | 2 | 3 => {
+    if (currentView === "ACCEPTANCE") return 1;
+    if (currentView === "CHECKLIST_LOGIN") return 2;
+    return 3;
+  };
+
+  const handleStep1Accept = () => {
+    if (!completedSteps.includes(1)) {
+      setCompletedSteps((prev) => [...prev, 1]);
+    }
+    setCurrentView("CHECKLIST_LOGIN");
+  };
+
+  const handleStep2Submit = () => {
+    if (!completedSteps.includes(2)) {
+      setCompletedSteps((prev) => (prev.includes(1) ? [...prev, 2] : [1, 2]));
+    }
+    setCurrentView("CASHOUT_PREDICTOR");
+  };
+
   return (
-    <div className="min-h-screen bg-[#090909] text-[#F5F2EA] flex flex-col font-mono">
-      {/* Header Bar */}
-      <Navbar
-        onSimulateDemo={handleSimulateDemo}
-        onResetDemo={handleResetDemo}
-        onOpenCopilot={() => setIsCopilotOpen(true)}
-        isDemoActive={isDemoActive}
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
+      
+      {/* Official Financial Cyber Fraud Portal Header */}
+      <NcrpHeader
+        currentView={currentView}
+        isAdminAuthenticated={isAdminAuthenticated}
+        adminOfficer={adminOfficer}
+        onLogoutAdmin={() => {
+          setIsAdminAuthenticated(false);
+          setAdminOfficer(null);
+          setCurrentView("ACCEPTANCE");
+        }}
+        onNavigate={(view: any) => {
+          if (view === "WITHDRAW_MODAL") {
+            setIsWithdrawModalOpen(true);
+          } else if (view === "ACCEPTANCE") {
+            setCurrentView("ACCEPTANCE");
+          } else if (view === "ADMIN_LOGIN_GATE") {
+            setIsAdminAuthModalOpen(true);
+          } else if (view === "RISK_MAP_ANALYTICS") {
+            if (isAdminAuthenticated) {
+              setCurrentView("RISK_MAP_ANALYTICS");
+            } else {
+              setIsAdminAuthModalOpen(true);
+            }
+          } else {
+            setCurrentView(view);
+          }
+        }}
       />
 
-      <div className="flex flex-1">
-        {/* Tactical Sidebar */}
-        <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+      {/* Sequential Stepper for the 3 Registration Steps with Strict Locks */}
+      {currentView !== "RISK_MAP_ANALYTICS" && (
+        <ComplaintStepper
+          currentStep={getStepNumber()}
+          completedSteps={completedSteps}
+          onStepClick={(step) => {
+            if (step === 1) setCurrentView("ACCEPTANCE");
+            if (step === 2 && (completedSteps.includes(1) || currentView === "CASHOUT_PREDICTOR")) {
+              setCurrentView("CHECKLIST_LOGIN");
+            }
+            if (step === 3 && completedSteps.includes(2)) {
+              setCurrentView("CASHOUT_PREDICTOR");
+            }
+          }}
+        />
+      )}
 
-        {/* Main Content Workspace */}
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          {isBackendUnreachable && (
-            <div className="p-8 rounded-xl bg-[#0D0D0F] border border-[#FF304F] glass-obsidian-crimson text-center space-y-4 my-4">
-              <AlertTriangle className="w-12 h-12 text-[#FF304F] mx-auto animate-pulse" />
-              <h2 className="text-xl font-black text-[#FF304F] tracking-wider uppercase">
-                INTELLIGENCE SERVICE UNAVAILABLE
-              </h2>
-              <p className="text-[#A6A19A] text-sm max-w-md mx-auto">
-                The predictive intelligence backend is currently unreachable.
-              </p>
-              <button
-                onClick={loadData}
-                className="px-6 py-2 bg-[#FF304F] hover:bg-[#E51C46] text-white font-bold rounded-lg tracking-wider text-xs transition-all cursor-pointer shadow-lg shadow-[#FF304F]/30 uppercase"
-              >
-                [ RETRY ]
-              </button>
-            </div>
-          )}
+      {/* STEP 1: TERMS & CONDITIONS */}
+      {currentView === "ACCEPTANCE" && (
+        <ComplaintAcceptanceView
+          onAccept={handleStep1Accept}
+        />
+      )}
 
-          {/* Flagship Command Center Title Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0D0D0F] p-4 rounded-xl border border-[#242428] glass-obsidian-crimson">
+      {/* STEP 2: CITIZEN VERIFICATION & CHECKLIST */}
+      {currentView === "CHECKLIST_LOGIN" && (
+        <CitizenLoginView
+          onSuccessLogin={handleStep2Submit}
+          onBack={() => setCurrentView("ACCEPTANCE")}
+        />
+      )}
 
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FF304F]/20 text-[#FF304F] border border-[#FF304F]/40 crimson-pulse">
-                  OBSIDIAN INTELLIGENCE v4.0
-                </span>
-                <h1 className="text-xl font-black tracking-widest text-[#F5F2EA] uppercase font-mono">
-                  NATIONAL CYBER THREAT COMMAND CENTER
-                </h1>
-              </div>
-              <p className="text-xs text-[#A6A19A] mt-1">
-                PREDICTIVE CYBERCRIME CORRELATION & ADVANCED EARLY-WARNING ENGINE
-              </p>
-            </div>
+      {/* STEP 3: REPORT FRAUD & AI CASH-OUT PREDICTOR */}
+      {currentView === "CASHOUT_PREDICTOR" && (
+        <FinancialFraudFormView
+          onBack={() => setCurrentView("CHECKLIST_LOGIN")}
+          onOpenCommandCenter={(complaintCode?: string) => {
+            if (complaintCode) setPendingComplaintCode(complaintCode);
+            if (isAdminAuthenticated) {
+              setCurrentView("RISK_MAP_ANALYTICS");
+            } else {
+              setIsAdminAuthModalOpen(true);
+            }
+          }}
+        />
+      )}
 
-            {/* Tactical Stat Telemetry Pills */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div className="bg-[#121214] px-3.5 py-1.5 rounded-lg border border-[#242428]">
-                <span className="text-[#A6A19A] block text-[9px]">INGESTED COMPLAINTS</span>
-                <span className="font-extrabold text-[#F5F2EA] text-sm">
-                  {summaryData?.kpi_metrics?.total_complaints || 1000}
-                </span>
-              </div>
-              <div className="bg-[#121214] px-3.5 py-1.5 rounded-lg border border-[#242428]">
-                <span className="text-[#A6A19A] block text-[9px]">FINANCIAL LOSS IMPAIRMENT</span>
-                <span className="font-extrabold text-[#F59E0B] text-sm">
-                  ₹{((summaryData?.kpi_metrics?.total_financial_loss || 14500000) / 100000).toFixed(1)}L
-                </span>
-              </div>
-              <div className="bg-[#121214] px-3.5 py-1.5 rounded-lg border border-[#242428]">
-                <span className="text-[#A6A19A] block text-[9px]">CRITICAL EARLY WARNINGS</span>
-                <span className="font-extrabold text-[#FF304F] text-sm">
-                  {earlyWarnings.length || 2}
-                </span>
-              </div>
+      {/* STEP 4: FINANCIAL THREAT INTELLIGENCE & NATIONAL RISK MAP (ADMIN ONLY) */}
+      {currentView === "RISK_MAP_ANALYTICS" && (
+        <div className="min-h-screen bg-[#F0F5FA] text-slate-900 flex flex-col font-sans">
+          
+          {/* Tactical Command Bar styled in official Government Blue */}
+          <div className="bg-[#007ceb] text-white px-4 sm:px-8 py-2.5 flex items-center justify-between shadow-md">
+            <button
+              onClick={() => setCurrentView("ACCEPTANCE")}
+              className="flex items-center space-x-2 text-xs text-blue-100 hover:text-white font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 text-yellow-300" />
+              <span>&lt; Back to Citizen Complaint Filing</span>
+            </button>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] font-bold bg-white/15 text-white border border-white/25 px-3 py-1 rounded flex items-center space-x-1.5 font-mono shadow-sm">
+                <Shield className="w-3.5 h-3.5 text-yellow-300" />
+                <span>ADMIN LAW ENFORCEMENT OBSERVATORY & COMPLAINT TRACKER</span>
+              </span>
             </div>
           </div>
 
-          {/* Cinematic 6-Stage Intelligence Flow Pipeline */}
-          <IntelligenceFlow
-            onStageClick={(stageId) => {
-              if (stageId === "EXPLAINED") setIsExplainOpen(true);
-              if (stageId === "WARNED") setActiveSection("EARLY_WARNINGS");
-              if (stageId === "REVIEWED") setActiveSection("INVESTIGATION_WORKSPACE");
-            }}
+          <Navbar
+            onSimulateDemo={handleSimulateDemo}
+            onResetDemo={handleResetDemo}
+            onOpenCopilot={() => setIsCopilotOpen(true)}
+            isDemoActive={isDemoActive}
           />
 
-          {/* Command Center Main Layout */}
-          {activeSection === "COMMAND_CENTER" && (
-            <div className="space-y-6">
-              {/* Asymmetric Row 1: 3D Global Threat Core + 3D Risk Score Gauge */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <GlobalThreatCore />
+          <div className="flex flex-1">
+            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+
+            <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+              {isBackendUnreachable && (
+                <div className="p-8 rounded-xl bg-white border border-red-200 text-center space-y-4 my-4 shadow-sm">
+                  <AlertTriangle className="w-12 h-12 text-red-600 mx-auto animate-pulse" />
+                  <h2 className="text-xl font-black text-red-600 tracking-wider uppercase font-mono">
+                    INTELLIGENCE SERVICE UNAVAILABLE
+                  </h2>
+                  <p className="text-slate-600 text-sm max-w-md mx-auto">
+                    The predictive intelligence backend is currently unreachable.
+                  </p>
+                  <button
+                    onClick={loadData}
+                    className="px-6 py-2 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold rounded-lg tracking-wider text-xs transition-all cursor-pointer shadow-sm uppercase font-mono"
+                  >
+                    [ RETRY ]
+                  </button>
                 </div>
+              )}
+
+              {/* Title Banner in Royal Government Blue */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-[#005A9C] to-[#007CEB] text-white p-5 rounded-xl shadow-md border border-blue-400/30">
                 <div>
-                  <RiskScoreGauge score={87} level="CRITICAL RISK" trend="+14.2% THIS WEEK" />
+                  <div className="flex items-center space-x-2.5">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/20 text-yellow-300 border border-white/30 font-mono tracking-wider">
+                      ML CASHOUT FORECASTER
+                    </span>
+                    <h1 className="text-lg sm:text-xl font-black tracking-wide text-white uppercase font-sans">
+                      NATIONAL FINANCIAL CYBER THREAT COMMAND CENTER
+                    </h1>
+                  </div>
+                  <p className="text-xs text-blue-100 mt-1 font-medium">
+                    PREDICTIVE CYBERCRIME CORRELATION & ADVANCED CASH-OUT EARLY-WARNING ENGINE
+                  </p>
+                </div>
+
+                {/* Telemetry KPI Pills */}
+                <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                    <span className="text-blue-100 block text-[9px] font-sans">INGESTED FINANCIAL COMPLAINTS</span>
+                    <span className="font-black text-white text-base">
+                      {summaryData?.kpi_metrics?.total_complaints || 10000}
+                    </span>
+                  </div>
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                    <span className="text-blue-100 block text-[9px] font-sans">TOTAL LOSS IMPAIRMENT</span>
+                    <span className="font-black text-yellow-300 text-base">
+                      ₹{((summaryData?.kpi_metrics?.total_financial_loss || 14500000) / 100000).toFixed(1)}L
+                    </span>
+                  </div>
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                    <span className="text-blue-100 block text-[9px] font-sans">ACTIVE EARLY WARNINGS</span>
+                    <span className="font-black text-red-200 text-base">
+                      {earlyWarnings.length || 2}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Asymmetric Row 2: India Predictive Risk Map + Threat DNA & Prediction Horizon */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <IndiaRiskMap
-                    locations={regionalLocs}
-                    onSelectDistrict={(loc) => {
-                      setIsExplainOpen(true);
+              {/* 6-Stage Intelligence Flow Pipeline */}
+              <IntelligenceFlow
+                onStageClick={(stageId) => {
+                  if (stageId === "EXPLAINED") setIsExplainOpen(true);
+                  if (stageId === "WARNED") setActiveSection("EARLY_WARNINGS");
+                  if (stageId === "REVIEWED") setActiveSection("EARLY_WARNINGS");
+                }}
+              />
+
+              {/* Command Center Main Layout */}
+              {activeSection === "COMMAND_CENTER" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                      <GlobalThreatCore />
+                    </div>
+                    <div>
+                      <RiskScoreGauge score={87} level="CRITICAL RISK" trend="+14.2% THIS WEEK" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                      <IndiaRiskMap
+                        locations={regionalLocs}
+                        targetComplaintLocation={targetComplaintLocation}
+                        onSelectDistrict={() => setIsExplainOpen(true)}
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <ThreatDNACard
+                        dna={threatClusters[0]?.dna_metrics}
+                        onReviewClick={() => setIsExplainOpen(true)}
+                      />
+                      <PredictionHorizon data={forecastData} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm font-sans">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="w-4 h-4 text-red-600" />
+                          <h3 className="text-xs font-bold text-slate-900 uppercase font-mono">
+                            LIVE FINANCIAL EARLY INTELLIGENCE SIGNALS
+                          </h3>
+                        </div>
+                        <span className="text-[10px] font-mono text-red-700 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                          ACTION REQUIRED
+                        </span>
+                      </div>
+
+                      <div className="space-y-3 font-sans">
+                        {earlyWarnings.map((w) => (
+                          <div key={w.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-mono font-bold text-red-700">{w.warning_code}</span>
+                                <span className="font-bold text-slate-900">{w.threat_name}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 leading-relaxed">{w.signal_summary}</p>
+                            </div>
+                            <div className="flex items-center space-x-2 shrink-0 font-mono">
+                              <button
+                                onClick={() => handleWarningAction(w.id, "ACKNOWLEDGE")}
+                                className="px-2.5 py-1 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 cursor-pointer"
+                              >
+                                ACKNOWLEDGE
+                              </button>
+                              <button
+                                onClick={() => handleWarningAction(w.id, "INVESTIGATE")}
+                                className="px-2.5 py-1 rounded text-[10px] font-bold bg-[#005A9C] hover:bg-[#00487D] text-white shadow-sm cursor-pointer"
+                              >
+                                REVIEW INTELLIGENCE
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <EntityGraph />
+                  </div>
+                </div>
+              )}
+
+              {activeSection === "COMPLAINTS" && (
+                <ComplaintsListView
+                  onSelectComplaint={(code, data) => {
+                    setPendingComplaintCode(code);
+                    if (data?.location) {
+                      setTargetComplaintLocation(data);
+                    }
+                    setActiveSection("REPORTS");
+                  }}
+                />
+              )}
+
+              {(activeSection === "REPORTS" || activeSection === "COMPLAINT_INTELLIGENCE") && (
+                <div className="space-y-6 font-sans">
+                  {/* Tactical Reports Navigation Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                    <button
+                      onClick={() => setActiveSection("COMPLAINTS")}
+                      className="flex items-center space-x-2 text-xs font-bold text-[#005A9C] hover:text-[#00487D] transition-colors cursor-pointer bg-blue-50/70 hover:bg-blue-100/70 px-3 py-1.5 rounded-lg border border-blue-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 text-[#005A9C]" />
+                      <span>&larr; Back to Complaints Database</span>
+                    </button>
+
+                    <div className="flex items-center space-x-2 font-mono">
+                      <span className="text-[10px] text-slate-500 font-bold">PREDICTED FORENSIC DOSSIER:</span>
+                      <span className="bg-red-50 text-red-700 font-black text-xs px-2.5 py-1 rounded border border-red-200">
+                        #{pendingComplaintCode}
+                      </span>
+                    </div>
+                  </div>
+
+                  <AdminComplaintLocationInspector
+                    adminUser={adminOfficer}
+                    initialComplaintCode={pendingComplaintCode}
+                    onSelectComplaintLocation={(locData) => setTargetComplaintLocation(locData)}
+                    onLogoutAdmin={() => {
+                      setIsAdminAuthenticated(false);
+                      setAdminOfficer(null);
+                      setCurrentView("ACCEPTANCE");
                     }}
                   />
+                  <IndiaRiskMap
+                    locations={regionalLocs}
+                    targetComplaintLocation={targetComplaintLocation}
+                    onSelectDistrict={() => setIsExplainOpen(true)}
+                  />
                 </div>
-                <div className="space-y-4">
-                  {/* Signature Threat DNA Fingerprint */}
+              )}
+
+              {activeSection === "CYBER_RISK_MAP" && <IndiaRiskMap locations={regionalLocs} />}
+              {activeSection === "THREAT_CLUSTERS" && (
+                <div className="space-y-6 font-sans">
                   <ThreatDNACard
                     dna={threatClusters[0]?.dna_metrics}
                     onReviewClick={() => setIsExplainOpen(true)}
                   />
-
-                  {/* Prediction Horizon Timeline */}
-                  <PredictionHorizon data={forecastData} />
-                </div>
-              </div>
-
-              {/* Row 3: Early Warnings Signals & 3D Entity Relationship Topology */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Live Early Warnings Signals */}
-                <div className="bg-[#0D0D0F] border border-[#242428] rounded-xl p-4 glass-obsidian-crimson shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3 mb-3">
-                    <div className="flex items-center space-x-2">
-                      <AlertTriangle className="w-4 h-4 text-[#FF304F]" />
-                      <h3 className="text-xs font-bold text-[#F5F2EA] uppercase font-mono">
-                        LIVE EARLY INTELLIGENCE SIGNALS
-                      </h3>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#FF304F] font-bold bg-[#FF304F]/20 px-2 py-0.5 rounded border border-[#FF304F]/40 crimson-pulse">
-                      ACTION REQUIRED
-                    </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {threatClusters.map((tc, idx) => (
+                      <div key={tc.id || idx} className="bg-white border border-slate-200 p-4 rounded-xl space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-900">{tc.cluster_name}</span>
+                          <span className="text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 font-mono">
+                            Risk: {tc.risk_score}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600">{tc.modus_operandi}</p>
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 font-mono">
+                          <span className="text-slate-500">Nodes: {tc.node_count || 14}</span>
+                          <span className="text-purple-700 font-bold">Region: {tc.primary_state || "National"}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
+              )}
 
-                  <div className="space-y-3">
+              {activeSection === "ENTITY_INTELLIGENCE" && <EntityGraph />}
+              {activeSection === "PREDICTIVE_INTELLIGENCE" && <PredictionHorizon data={forecastData} />}
+
+              {activeSection === "EARLY_WARNINGS" && (
+                <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-4 shadow-sm font-sans">
+                  <h2 className="text-base font-extrabold text-slate-900 uppercase font-mono">EARLY WARNING ENGINE WORKSPACE</h2>
+                  <div className="space-y-3 font-mono">
                     {earlyWarnings.map((w) => (
-                      <div key={w.id} className="bg-[#090909] p-3 rounded-lg border border-[#242428] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div key={w.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                         <div>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-mono font-bold text-[#FF304F]">{w.warning_code}</span>
-                            <span className="font-bold text-[#F5F2EA]">{w.threat_name}</span>
+                          <div className="flex items-center space-x-3 mb-1">
+                            <span className="font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">{w.warning_code}</span>
+                            <span className="text-sm font-bold text-slate-900">{w.threat_name}</span>
+                            <span className="text-[10px] font-mono text-purple-700 font-bold">{w.region}</span>
                           </div>
-                          <p className="text-[11px] text-[#A6A19A] leading-relaxed">{w.signal_summary}</p>
+                          <p className="text-slate-600 font-sans">{w.signal_summary}</p>
                         </div>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <button
-                            onClick={() => handleWarningAction(w.id, "ACKNOWLEDGE")}
-                            className="px-2.5 py-1 rounded text-[10px] font-bold bg-[#171719] hover:bg-[#242428] text-[#A6A19A]"
-                          >
-                            ACKNOWLEDGE
-                          </button>
-                          <button
-                            onClick={() => handleWarningAction(w.id, "INVESTIGATE")}
-                            className="px-2.5 py-1 rounded text-[10px] font-bold bg-[#FF304F] hover:bg-[#E51C46] text-[#090909] shadow-sm"
-                          >
-                            REVIEW INTELLIGENCE
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleWarningAction(w.id, "INVESTIGATE")}
+                          className="px-3.5 py-1.5 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold rounded-lg shadow-sm cursor-pointer"
+                        >
+                          OPEN CASE
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
 
-                {/* 3D Entity Relationship Topology Graph */}
-                <EntityGraph />
-              </div>
-            </div>
-          )}
 
-          {/* Section: Cyber Risk Map Full View */}
-          {activeSection === "CYBER_RISK_MAP" && (
-            <IndiaRiskMap locations={regionalLocs} />
-          )}
-
-          {/* Section: Entity Intelligence Full View */}
-          {activeSection === "ENTITY_INTELLIGENCE" && (
-            <EntityGraph />
-          )}
-
-          {/* Section: Predictive Intelligence Full View */}
-          {activeSection === "PREDICTIVE_INTELLIGENCE" && (
-            <PredictionHorizon data={forecastData} />
-          )}
-
-          {/* Section: Early Warnings Full View */}
-          {activeSection === "EARLY_WARNINGS" && (
-            <div className="bg-[#0D0D0F] p-5 rounded-xl border border-[#242428] space-y-4">
-              <h2 className="text-base font-extrabold text-[#F5F2EA] uppercase font-mono">EARLY WARNING ENGINE WORKSPACE</h2>
-              <div className="space-y-3">
-                {earlyWarnings.map((w) => (
-                  <div key={w.id} className="bg-[#090909] p-4 rounded-xl border border-[#242428] flex items-center justify-between text-xs font-mono">
-                    <div>
-                      <div className="flex items-center space-x-3 mb-1">
-                        <span className="font-mono font-bold text-[#FF304F] bg-[#FF304F]/20 px-2 py-0.5 rounded border border-[#FF304F]/30">{w.warning_code}</span>
-                        <span className="text-sm font-bold text-[#F5F2EA]">{w.threat_name}</span>
-                        <span className="text-[10px] font-mono text-[#8B5CF6]">{w.region}</span>
-                      </div>
-                      <p className="text-[#A6A19A]">{w.signal_summary}</p>
-                    </div>
-                    <button
-                      onClick={() => handleWarningAction(w.id, "INVESTIGATE")}
-                      className="px-3.5 py-1.5 bg-[#FF304F] hover:bg-[#E51C46] text-[#090909] font-bold rounded-lg"
-                    >
-                      OPEN CASE
-                    </button>
+              {activeSection === "AUDIT_TRAIL" && (
+                <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-4 font-sans shadow-sm">
+                  <h2 className="text-base font-extrabold text-slate-900 uppercase font-mono">SECURITY & AUDIT TRAIL LOGS</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                        <tr>
+                          <th className="p-2.5">TIMESTAMP</th>
+                          <th className="p-2.5">USER</th>
+                          <th className="p-2.5">ROLE</th>
+                          <th className="p-2.5">ACTION</th>
+                          <th className="p-2.5">RESOURCE</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {auditLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-50">
+                            <td className="p-2.5 text-slate-500">{log.timestamp}</td>
+                            <td className="p-2.5 text-slate-900 font-bold">{log.username}</td>
+                            <td className="p-2.5 text-purple-700 font-bold">{log.role}</td>
+                            <td className="p-2.5 text-amber-800 font-bold">{log.action}</td>
+                            <td className="p-2.5 text-slate-600">{log.resource}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              )}
+            </main>
+          </div>
 
-          {/* Section: Investigation Workspace Full View */}
-          {activeSection === "INVESTIGATION_WORKSPACE" && (
-            <div className="bg-[#0D0D0F] p-5 rounded-xl border border-[#242428] space-y-4 font-mono">
-              <h2 className="text-base font-extrabold text-[#F5F2EA] uppercase">INVESTIGATION WORKSPACE</h2>
-              <div className="space-y-3">
-                {investigations.map((inv) => (
-                  <div key={inv.id} className="bg-[#090909] p-4 rounded-xl border border-[#242428] space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-[#8B5CF6] text-sm">{inv.case_number}: {inv.title}</span>
-                      <span className="bg-[#F59E0B]/20 text-[#F59E0B] font-mono px-2 py-0.5 rounded border border-[#F59E0B]/30">{inv.status}</span>
-                    </div>
-                    <p className="text-[#A6A19A]">{inv.summary}</p>
-                    <div className="text-[11px] text-[#706C66] font-mono">Lead Officer: {inv.lead_officer}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <ExplainableDrawer isOpen={isExplainOpen} onClose={() => setIsExplainOpen(false)} />
+        </div>
+      )}
 
-          {/* Section: Audit Trail Full View */}
-          {activeSection === "AUDIT_TRAIL" && (
-            <div className="bg-[#0D0D0F] p-5 rounded-xl border border-[#242428] space-y-4 font-mono">
-              <h2 className="text-base font-extrabold text-[#F5F2EA] uppercase">SECURITY & AUDIT TRAIL LOGS</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#121214] text-[#A6A19A] border-b border-[#242428]">
-                    <tr>
-                      <th className="p-2.5">TIMESTAMP</th>
-                      <th className="p-2.5">USER</th>
-                      <th className="p-2.5">ROLE</th>
-                      <th className="p-2.5">ACTION</th>
-                      <th className="p-2.5">RESOURCE</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#242428]">
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-[#121214]">
-                        <td className="p-2.5 text-[#A6A19A]">{log.timestamp}</td>
-                        <td className="p-2.5 text-[#F5F2EA]">{log.username}</td>
-                        <td className="p-2.5 text-[#8B5CF6]">{log.role}</td>
-                        <td className="p-2.5 text-[#F59E0B]">{log.action}</td>
-                        <td className="p-2.5 text-[#A6A19A]">{log.resource}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+      {/* 12-Digit Complaint Withdrawal Modal */}
+      <ComplaintWithdrawalModal
+        isOpen={isWithdrawModalOpen}
+        onClose={() => setIsWithdrawModalOpen(false)}
+      />
 
-      {/* Drawers */}
-      <ExplainableDrawer isOpen={isExplainOpen} onClose={() => setIsExplainOpen(false)} />
-      <CopilotDrawer isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
+      {/* Admin / Law Enforcement Verification Gate Modal */}
+      <AdminAuthModal
+        isOpen={isAdminAuthModalOpen}
+        initialComplaintCode={pendingComplaintCode}
+        onClose={() => setIsAdminAuthModalOpen(false)}
+        onSuccessAuth={(officerInfo, targetCode) => {
+          setIsAdminAuthenticated(true);
+          setAdminOfficer(officerInfo);
+          if (targetCode) setPendingComplaintCode(targetCode);
+          setCurrentView("RISK_MAP_ANALYTICS");
+        }}
+      />
+
+      {/* Official Government Footer */}
+      <NcrpFooter />
     </div>
   );
 }

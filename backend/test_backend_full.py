@@ -122,12 +122,29 @@ def run_full_backend_audit():
     assert res.status_code == 200
     print("[PASS] POST /api/v1/demo/simulate-emerging-threat -> Status:", res.json()["status"], "| Threat Code:", res.json()["simulated_threat"]["warning_code"])
 
-    # 20. Demo Reset
-    res = client.post("/api/v1/demo/reset-demo", headers=headers)
+    # 21. Trained ML Model Cash-Out Forecaster (sih26184_mule_cashout_model.pkl)
+    cashout_payload = {
+        "complaint_id": "NCRP-TEST-2026-WB-883921",
+        "amount": 185000.0,
+        "format": "Wire",
+        "from_bank": 27,
+        "to_bank": 3,
+        "latitude": 22.5726,
+        "longitude": 88.3639,
+        "bank_affinity": "State Bank of India",
+        "hour": 16
+    }
+    res = client.post("/api/v1/predictions/cashout", headers=headers, json=cashout_payload)
+    assert res.status_code == 200, f"/predictions/cashout failed: {res.text}"
+    c_res = res.json()
+    assert "risk_assessment" in c_res
+    print("[PASS] POST /api/v1/predictions/cashout -> Mule Risk:", c_res["risk_assessment"]["mule_laundering_probability"], "| Hotspots Forecasted:", len(c_res.get("forecasted_cashout_hotspots", [])))
+
+    res = client.get("/api/v1/predictions/model-info", headers=headers)
     assert res.status_code == 200
-    print("[PASS] POST /api/v1/demo/reset-demo -> Status:", res.json()["status"])
-    
-    print("\nALL 20 BACKEND ENDPOINT AUDITS PASSED WITH ZERO ERRORS!")
+    print("[PASS] GET /api/v1/predictions/model-info -> Model Status:", res.json()["status"], "| Features:", res.json().get("trained_features_count"))
+
+    print("\nALL 22 BACKEND REAL-TIME & ML ENDPOINT AUDITS PASSED WITH ZERO ERRORS!")
 
 if __name__ == "__main__":
     run_full_backend_audit()

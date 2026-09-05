@@ -30,3 +30,18 @@ venv/
 Thumbs.db
 *.tmp
 .tools/
+
+# ML Models & Large Binaries (exceeds GitHub 100MB limit)
+*.pkl
+*.h5
+*.onnx
+*.pt
+*.pth
+
+# Screenshot & Automation Artifacts
+capture_*.js
+frontend/capture_*.js
+*.png
+*.jpg
+*.jpeg
+

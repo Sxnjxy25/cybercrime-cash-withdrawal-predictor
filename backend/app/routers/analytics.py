@@ -22,17 +22,39 @@ def get_analytics_trends(db: Session = Depends(get_db), current_user: User = Dep
         func.count(Complaint.id).label("count")
     ).group_by(Complaint.channel).all()
 
-    # Time trend (mocked rolling historical dates for visualization)
-    time_series = [
-        {"date": "2026-08-28", "observed": 310, "forecast": 305, "anomaly": 0},
-        {"date": "2026-08-29", "observed": 340, "forecast": 320, "anomaly": 0},
-        {"date": "2026-08-30", "observed": 380, "forecast": 350, "anomaly": 0},
-        {"date": "2026-08-31", "observed": 410, "forecast": 390, "anomaly": 0},
-        {"date": "2026-09-01", "observed": 428, "forecast": 420, "anomaly": 0},
-        {"date": "2026-09-02", "observed": 490, "forecast": 450, "anomaly": 1},
-        {"date": "2026-09-03", "observed": 520, "forecast": 480, "anomaly": 1},
-        {"date": "2026-09-04", "observed": 547, "forecast": 510, "anomaly": 1}
-    ]
+    # Time trend dynamically calculated from live complaints in database
+    daily_rows = db.query(
+        func.date(Complaint.complaint_timestamp).label("date_str"),
+        func.count(Complaint.id).label("count")
+    ).group_by(func.date(Complaint.complaint_timestamp)).order_by(func.date(Complaint.complaint_timestamp).asc()).all()
+
+    time_series = []
+    if daily_rows:
+        counts = [float(r[1]) for r in daily_rows]
+        mean_count = sum(counts) / len(counts) if counts else 100.0
+        
+        # Calculate moving average & anomaly indicators on real data
+        for i, (date_val, count_val) in enumerate(daily_rows):
+            cnt = int(count_val)
+            # Rolling forecast baseline
+            if i == 0:
+                forecast_val = round(float(cnt) * 0.98)
+            else:
+                prev_counts = [float(r[1]) for r in daily_rows[max(0, i-3):i]]
+                forecast_val = round(sum(prev_counts) / len(prev_counts) * 1.02)
+            
+            # Real anomaly if observed is > 1.2x mean and positive surge
+            is_anomaly = 1 if (cnt > mean_count * 1.2 and cnt > forecast_val) else 0
+            
+            time_series.append({
+                "date": str(date_val),
+                "observed": cnt,
+                "forecast": forecast_val,
+                "anomaly": is_anomaly
+            })
+    else:
+        # Fallback if database is currently empty
+        time_series = []
 
     return {
         "category_distribution": [
