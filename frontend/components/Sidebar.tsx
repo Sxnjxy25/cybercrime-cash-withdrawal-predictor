@@ -54,13 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSectio
                   {item.badge}
                 </span>
               )}
-              {item.alert && (
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                  isActive ? "bg-amber-400 text-slate-950 font-black" : "bg-amber-100 text-amber-800 border border-amber-200"
-                }`}>
-                  ALERT
-                </span>
-              )}
             </button>
           );
         })}

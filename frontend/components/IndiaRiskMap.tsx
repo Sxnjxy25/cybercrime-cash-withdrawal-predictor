@@ -1,26 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Shield, Layers, Filter } from "lucide-react";
-
-// Dynamically import Leaflet components for SSR compatibility in Next.js
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const CircleMarker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.CircleMarker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Popup),
-  { ssr: false }
-);
 
 interface RegionalLocation {
   id: string;
@@ -36,6 +18,19 @@ interface RegionalLocation {
   dominant_category: string;
 }
 
+const DynamicLeafletMap = dynamic(
+  () => import("./IndiaRiskMapLeaflet").then((mod) => mod.IndiaRiskMapLeaflet),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[460px] flex flex-col items-center justify-center bg-slate-50 text-slate-500 font-mono text-xs space-y-2">
+        <div className="w-6 h-6 border-2 border-[#005A9C] border-t-transparent rounded-full animate-spin"></div>
+        <span className="font-bold tracking-wider text-[#005A9C]">INITIALIZING PREDICTIVE CYBER RISK MAP...</span>
+      </div>
+    )
+  }
+);
+
 const MAP_MODES = [
   "CURRENT RISK",
   "FORECAST RISK",
@@ -50,18 +45,6 @@ interface IndiaRiskMapProps {
   onSelectDistrict?: (loc: RegionalLocation) => void;
   targetComplaintLocation?: any;
 }
-
-// Map Focus Controller to fly/pan to specific complaint coordinates
-const MapFocusController: React.FC<{ coords?: [number, number] }> = ({ coords }) => {
-  const { useMap } = require("react-leaflet");
-  const map = useMap();
-  React.useEffect(() => {
-    if (coords && coords[0] && coords[1]) {
-      map.flyTo(coords, 12, { animate: true, duration: 1.5 });
-    }
-  }, [coords, map]);
-  return null;
-};
 
 const DEFAULT_RISK_LOCATIONS: RegionalLocation[] = [
   {
@@ -188,8 +171,13 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
   onSelectDistrict,
   targetComplaintLocation
 }) => {
+  const [isMounted, setIsMounted] = useState(false);
   const [activeMode, setActiveMode] = useState("CURRENT RISK");
   const [selectedLoc, setSelectedLoc] = useState<RegionalLocation | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const displayLocations = (locations && locations.length > 0) ? locations : DEFAULT_RISK_LOCATIONS;
 
@@ -247,121 +235,22 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
 
       {/* Main Map Body */}
       <div className="relative flex-1 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 min-h-[460px]">
-        {typeof window !== "undefined" && (
-          <MapContainer center={center} zoom={5} scrollWheelZoom={true} className="w-full h-full">
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {/* If a specific complaint is selected, fly to its coordinates */}
-            {targetComplaintLocation?.location && (
-              <MapFocusController
-                coords={[
-                  targetComplaintLocation.location.latitude,
-                  targetComplaintLocation.location.longitude
-                ]}
-              />
-            )}
-
-            {/* Specific Crime Incident Pinpoint Marker */}
-            {targetComplaintLocation?.location && (
-              <CircleMarker
-                center={[
-                  targetComplaintLocation.location.latitude,
-                  targetComplaintLocation.location.longitude
-                ]}
-                radius={16}
-                pathOptions={{
-                  fillColor: "#EAB308",
-                  fillOpacity: 0.9,
-                  color: "#DC2626",
-                  weight: 3
-                }}
-              >
-                <Popup className="custom-popup" autoPan={false}>
-                  <div className="p-2 text-slate-900 text-xs font-sans space-y-1">
-                    <p className="font-extrabold text-sm text-red-600">
-                      🚨 CRIME INCIDENT: #{targetComplaintLocation.complaint_code}
-                    </p>
-                    <p className="text-[11px] font-semibold text-slate-600">
-                      {targetComplaintLocation.location.city}, {targetComplaintLocation.location.state}
-                    </p>
-                    <hr className="my-1 border-slate-200" />
-                    <p><strong>Category:</strong> <span className="font-bold">{targetComplaintLocation.category}</span></p>
-                    <p><strong>Financial Loss:</strong> <span className="text-amber-700 font-bold">₹{targetComplaintLocation.financial_loss?.toLocaleString("en-IN")}</span></p>
-                    <p><strong>Victim Bank:</strong> {targetComplaintLocation.victim_bank}</p>
-                    <p><strong>Suspect Mule:</strong> {targetComplaintLocation.suspect_mule_account}</p>
-                    <p className="text-red-600 font-bold uppercase">{targetComplaintLocation.urgency_level}</p>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            )}
-
-            {/* Forecasted ATM Cash-Out Hotspot Markers for this specific complaint */}
-            {targetComplaintLocation?.forecasted_atm_hotspots?.map((atm: any, i: number) => (
-              <CircleMarker
-                key={atm.atm_id || i}
-                center={[atm.latitude, atm.longitude]}
-                radius={10}
-                pathOptions={{
-                  fillColor: i === 0 ? "#DC2626" : "#2563EB",
-                  fillOpacity: 0.85,
-                  color: "#FFFFFF",
-                  weight: 2
-                }}
-              >
-                <Popup className="custom-popup" autoPan={false}>
-                  <div className="p-2 text-slate-900 text-xs font-sans space-y-1">
-                    <p className="font-extrabold text-xs text-[#005A9C]">
-                      🏧 {atm.atm_name}
-                    </p>
-                    <p><strong>Distance:</strong> {atm.distance_km} km</p>
-                    <p><strong>Transit ETA:</strong> {atm.estimated_arrival_eta_mins} mins</p>
-                    <p><strong>Cash-Out Risk:</strong> <span className="text-red-600 font-bold">{(atm.cashout_risk_score * 100).toFixed(0)}%</span></p>
-                    <p><strong>Action Priority:</strong> <span className="text-amber-700 font-bold">{atm.action_priority}</span></p>
-                    <p><strong>CCTV Surveillance:</strong> <span className="text-emerald-700 font-bold">{atm.cctv_status}</span></p>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            ))}
-
-            {displayLocations.map((loc) => {
-              const color = getMarkerColor(loc);
-              const radius = getMarkerRadius(loc);
-              return (
-                <CircleMarker
-                  key={loc.id}
-                  center={[loc.latitude, loc.longitude]}
-                  radius={radius}
-                  pathOptions={{
-                    fillColor: color,
-                    fillOpacity: 0.75,
-                    color: color,
-                    weight: 2
-                  }}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedLoc(loc);
-                      if (onSelectDistrict) onSelectDistrict(loc);
-                    }
-                  }}
-                >
-                  <Popup className="custom-popup">
-                    <div className="p-2 text-slate-900 text-xs font-sans">
-                      <p className="font-extrabold text-sm text-[#005A9C]">{loc.district}, {loc.state}</p>
-                      <p className="text-[11px] font-semibold text-slate-500">{loc.police_jurisdiction}</p>
-                      <hr className="my-1 border-slate-200" />
-                      <p><strong>Current Risk:</strong> <span className="text-red-600 font-bold">{loc.current_risk_score} ({loc.risk_band})</span></p>
-                      <p><strong>Forecast Risk:</strong> <span className="text-purple-700 font-bold">{loc.forecast_risk_score}</span></p>
-                      <p><strong>Dominant Category:</strong> {loc.dominant_category}</p>
-                      <p><strong>Complaint Count:</strong> {loc.complaint_count}</p>
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              );
-            })}
-          </MapContainer>
+        {isMounted ? (
+          <DynamicLeafletMap
+            center={center}
+            displayLocations={displayLocations}
+            activeMode={activeMode}
+            targetComplaintLocation={targetComplaintLocation}
+            onSelectDistrict={onSelectDistrict}
+            onMarkerClick={(loc) => setSelectedLoc(loc)}
+            getMarkerColor={getMarkerColor}
+            getMarkerRadius={getMarkerRadius}
+          />
+        ) : (
+          <div className="w-full h-full min-h-[460px] flex flex-col items-center justify-center bg-slate-50 text-slate-500 font-mono text-xs space-y-2">
+            <div className="w-6 h-6 border-2 border-[#005A9C] border-t-transparent rounded-full animate-spin"></div>
+            <span className="font-bold tracking-wider text-[#005A9C]">LOADING GEOSPATIAL INTELLIGENCE MAP...</span>
+          </div>
         )}
 
         {/* Selected District Drill-Down Overlay Panel */}
