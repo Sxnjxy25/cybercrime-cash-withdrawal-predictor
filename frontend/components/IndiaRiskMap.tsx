@@ -31,14 +31,6 @@ const DynamicLeafletMap = dynamic(
   }
 );
 
-const MAP_MODES = [
-  "CURRENT RISK",
-  "FORECAST RISK",
-  "COMPLAINT DENSITY",
-  "ANOMALY HOTSPOTS",
-  "THREAT CLUSTERS",
-  "CATEGORY ACTIVITY"
-];
 
 interface IndiaRiskMapProps {
   locations: RegionalLocation[];
@@ -172,7 +164,6 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
   targetComplaintLocation
 }) => {
   const [isMounted, setIsMounted] = useState(false);
-  const [activeMode, setActiveMode] = useState("CURRENT RISK");
   const [selectedLoc, setSelectedLoc] = useState<RegionalLocation | null>(null);
 
   useEffect(() => {
@@ -187,7 +178,7 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
     : [20.5937, 78.9629];
 
   const getMarkerColor = (loc: RegionalLocation) => {
-    const score = activeMode === "FORECAST RISK" ? loc.forecast_risk_score : loc.current_risk_score;
+    const score = loc.current_risk_score;
     if (score >= 76) return "#DC2626"; // Crimson Critical
     if (score >= 51) return "#D97706"; // Amber Warning
     if (score >= 26) return "#7C3AED"; // Violet Prediction
@@ -195,41 +186,21 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
   };
 
   const getMarkerRadius = (loc: RegionalLocation) => {
-    if (activeMode === "COMPLAINT DENSITY") {
-      return Math.min(24, Math.max(10, loc.complaint_count / 20));
-    }
     return Math.min(22, Math.max(10, loc.current_risk_score / 4.5));
   };
 
   return (
     <div className="bg-white border border-slate-200 border-t-4 border-t-[#005A9C] rounded-xl p-4 shadow-sm flex flex-col h-full min-h-[580px] font-sans">
       {/* Map Control Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 shrink-0">
+      <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
         <div>
           <h3 className="text-xs font-extrabold text-[#005A9C] tracking-wider uppercase flex items-center space-x-2 font-mono">
             <MapPin className="w-4 h-4 text-[#005A9C]" />
             <span>PREDICTIVE CYBER RISK MAP (INDIA)</span>
           </h3>
           <p className="text-[10px] text-slate-500 font-mono">
-            MODE: <span className="font-bold text-[#005A9C]">{activeMode}</span> • TACTICAL GEO-LAYERS
+            TACTICAL GEO-SPATIAL THREAT INTELLIGENCE
           </p>
-        </div>
-
-        {/* Map Mode Selector */}
-        <div className="flex flex-wrap gap-1 font-mono">
-          {MAP_MODES.map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setActiveMode(mode)}
-              className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                activeMode === mode
-                  ? "bg-[#005A9C] text-white border border-[#005A9C] shadow-sm"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -239,7 +210,7 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
           <DynamicLeafletMap
             center={center}
             displayLocations={displayLocations}
-            activeMode={activeMode}
+            activeMode="CURRENT RISK"
             targetComplaintLocation={targetComplaintLocation}
             onSelectDistrict={onSelectDistrict}
             onMarkerClick={(loc) => setSelectedLoc(loc)}
