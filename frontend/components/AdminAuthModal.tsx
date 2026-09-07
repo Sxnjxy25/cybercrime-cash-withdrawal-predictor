@@ -19,7 +19,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
 }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [agency, setAgency] = useState("");
+  const [agency, setAgency] = useState("I4C Central Cyber Command & Regional Cell");
   const [complaintCode, setComplaintCode] = useState(initialComplaintCode);
   const [errorMsg, setErrorMsg] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -58,7 +58,6 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
         }
       }
     } catch (err) {
-      // Fallback
       onSuccessAuth({
         username: "superadmin",
         full_name: "Insp. Rajesh Kumar",
@@ -86,23 +85,23 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn font-sans">
-      <div className="bg-[#0D0D11] border-2 border-amber-500/50 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-white relative font-mono">
+    <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn font-sans">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-900 relative">
         
         {/* Header Bar */}
-        <div className="bg-gradient-to-r from-[#171722] via-[#101018] to-[#171722] border-b border-[#2A2A38] p-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#003B6F] to-[#005A9C] p-5 flex items-center justify-between text-white shadow-sm">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <Shield className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-white shrink-0">
+              <Shield className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded tracking-wider uppercase">
                   RESTRICTED ACCESS
                 </span>
-                <span className="text-amber-400 text-[10px] font-bold">LAW ENFORCEMENT ONLY</span>
+                <span className="text-blue-100 text-[10px] font-bold font-mono">LAW ENFORCEMENT ONLY</span>
               </div>
-              <h2 className="text-base font-black text-[#F5F2EA] tracking-wide mt-0.5">
+              <h2 className="text-base font-extrabold text-white tracking-wide mt-0.5">
                 Admin & Officer Verification Gate
               </h2>
             </div>
@@ -110,30 +109,31 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/15 transition-colors cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Notice Banner */}
-        <div className="bg-amber-950/40 border-b border-amber-500/30 px-5 py-3 text-xs text-amber-200/90 leading-relaxed font-sans">
-          The <strong>National Financial Threat Map & Observatory</strong> is restricted to authorized Police Officers and Cyber Command Admins to inspect the specific crime location and forecasted cash-out ATM coordinates for specific citizen complaints.
+        <div className="bg-blue-50/80 border-b border-blue-100 px-5 py-3 text-xs text-slate-700 leading-relaxed font-sans">
+          The <strong className="text-[#005A9C]">National Financial Threat Map & Observatory</strong> is restricted to authorized Police Officers and Cyber Command Admins to inspect the specific crime location and forecasted cash-out ATM coordinates for specific citizen complaints.
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleLogin} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleLogin} className="p-5 space-y-4 text-xs font-sans">
           {errorMsg && (
-            <div className="bg-red-950/60 border border-red-500/50 p-3 rounded-lg flex items-center space-x-2 text-red-200">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <div className="bg-red-50 border border-red-200 p-3 rounded-lg flex items-center space-x-2 text-red-700 text-xs">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <div>
-              <label className="block text-gray-300 font-bold mb-1 flex items-center space-x-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1.5 text-xs font-mono">
+                <UserCheck className="w-3.5 h-3.5 text-[#005A9C]" />
                 <span>Officer Badge ID / Admin Username</span>
               </label>
               <input
@@ -141,14 +141,14 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. superadmin or IND-INV-104"
-                className="w-full bg-[#161620] border border-[#303045] rounded-lg px-3 py-2 text-white font-mono focus:border-amber-400 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2 text-slate-900 font-mono text-xs placeholder:text-slate-400 focus:bg-white focus:border-[#005A9C] focus:ring-2 focus:ring-[#005A9C]/15 focus:outline-none transition-all"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 font-bold mb-1 flex items-center space-x-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1.5 text-xs font-mono">
+                <KeyRound className="w-3.5 h-3.5 text-[#005A9C]" />
                 <span>Security Passcode / Token</span>
               </label>
               <input
@@ -156,20 +156,20 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full bg-[#161620] border border-[#303045] rounded-lg px-3 py-2 text-white font-mono focus:border-amber-400 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2 text-slate-900 font-mono text-xs placeholder:text-slate-400 focus:bg-white focus:border-[#005A9C] focus:ring-2 focus:ring-[#005A9C]/15 focus:outline-none transition-all"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 font-bold mb-1 flex items-center space-x-1.5">
-                <Building2 className="w-3.5 h-3.5 text-purple-400" />
+              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1.5 text-xs font-mono">
+                <Building2 className="w-3.5 h-3.5 text-[#005A9C]" />
                 <span>Law Enforcement Command Jurisdiction</span>
               </label>
               <select
                 value={agency}
                 onChange={(e) => setAgency(e.target.value)}
-                className="w-full bg-[#161620] border border-[#303045] rounded-lg px-3 py-2 text-gray-200 focus:border-amber-400 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2 text-slate-800 text-xs focus:bg-white focus:border-[#005A9C] focus:outline-none cursor-pointer transition-all"
               >
                 <option value="I4C Central Cyber Command & Regional Cell">I4C Central Cyber Command & Regional Cell</option>
                 <option value="State Police Cyber Crime Division">State Police Cyber Crime Division</option>
@@ -178,8 +178,8 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
               </select>
             </div>
 
-            <div className="bg-[#12121A] border border-blue-500/30 rounded-lg p-3">
-              <label className="block text-blue-300 font-bold mb-1">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5">
+              <label className="block text-slate-800 font-bold text-xs font-mono">
                 Specific 12-Digit Complaint Tracking Code (Optional):
               </label>
               <input
@@ -187,9 +187,9 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
                 value={complaintCode}
                 onChange={(e) => setComplaintCode(e.target.value)}
                 placeholder="e.g. 202684910294 (to inspect its location directly)"
-                className="w-full bg-[#0D0D14] border border-blue-400/40 rounded px-3 py-1.5 text-yellow-300 font-mono font-bold tracking-wider placeholder-gray-600 focus:outline-none focus:border-yellow-400"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-red-600 font-mono font-black text-xs tracking-wider placeholder:text-slate-400 focus:outline-none focus:border-[#005A9C] focus:ring-2 focus:ring-[#005A9C]/15"
               />
-              <span className="text-[10px] text-gray-400 block mt-1">
+              <span className="text-[10px] text-slate-500 font-sans block">
                 Enter code to immediately center the National Threat Map on this specific complaint.
               </span>
             </div>
@@ -199,7 +199,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             <button
               type="submit"
               disabled={isAuthenticating}
-              className="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-lg tracking-wider uppercase transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              className="flex-1 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold py-2.5 px-4 rounded-xl shadow-sm text-xs tracking-wide uppercase transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 font-mono"
             >
               <Lock className="w-4 h-4" />
               <span>{isAuthenticating ? "Verifying Credentials..." : "Authenticate & Access Threat Map"}</span>
@@ -208,17 +208,17 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             <button
               type="button"
               onClick={handleQuickDemoAuth}
-              className="bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/50 text-blue-200 font-bold py-2.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
+              className="bg-blue-50 hover:bg-blue-100 text-[#005A9C] border border-blue-200 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm font-mono"
               title="One-click official authentication for demo"
             >
-              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+              <Sparkles className="w-3.5 h-3.5 text-[#005A9C]" />
               <span>Quick LEO Demo Auth</span>
             </button>
           </div>
         </form>
 
         {/* Footer */}
-        <div className="bg-[#0A0A0E] border-t border-[#1F1F2C] px-5 py-2.5 text-center text-[10px] text-gray-500">
+        <div className="bg-slate-50 border-t border-slate-100 px-5 py-2.5 text-center text-[10px] text-slate-500 font-mono">
           Secured by I4C National Law Enforcement Identity Provider • 256-Bit Encrypted Portal
         </div>
       </div>
