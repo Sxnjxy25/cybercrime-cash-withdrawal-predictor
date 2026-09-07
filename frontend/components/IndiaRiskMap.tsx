@@ -63,6 +63,126 @@ const MapFocusController: React.FC<{ coords?: [number, number] }> = ({ coords })
   return null;
 };
 
+const DEFAULT_RISK_LOCATIONS: RegionalLocation[] = [
+  {
+    id: "loc-del",
+    state: "Delhi",
+    district: "New Delhi",
+    police_jurisdiction: "Special Cell Cyber Command, Delhi Police",
+    latitude: 28.6139,
+    longitude: 77.2090,
+    current_risk_score: 89.0,
+    forecast_risk_score: 93.5,
+    risk_band: "CRITICAL",
+    complaint_count: 342,
+    dominant_category: "UPI Impersonation"
+  },
+  {
+    id: "loc-mum",
+    state: "Maharashtra",
+    district: "Mumbai",
+    police_jurisdiction: "BKC Cyber Police Station, Mumbai",
+    latitude: 19.0760,
+    longitude: 72.8777,
+    current_risk_score: 84.0,
+    forecast_risk_score: 88.0,
+    risk_band: "CRITICAL",
+    complaint_count: 289,
+    dominant_category: "Digital Arrest Scam"
+  },
+  {
+    id: "loc-blr",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    police_jurisdiction: "CID Cyber Crime Division, Bengaluru",
+    latitude: 12.9716,
+    longitude: 77.5946,
+    current_risk_score: 82.0,
+    forecast_risk_score: 86.5,
+    risk_band: "CRITICAL",
+    complaint_count: 245,
+    dominant_category: "Investment Fraud & Phishing"
+  },
+  {
+    id: "loc-chn",
+    state: "Tamil Nadu",
+    district: "Chennai",
+    police_jurisdiction: "Chennai Central Cyber Crime Police Station",
+    latitude: 13.0827,
+    longitude: 80.2707,
+    current_risk_score: 78.0,
+    forecast_risk_score: 82.0,
+    risk_band: "CRITICAL",
+    complaint_count: 210,
+    dominant_category: "UPI Impersonation Ring"
+  },
+  {
+    id: "loc-hyd",
+    state: "Telangana",
+    district: "Hyderabad",
+    police_jurisdiction: "Cyberabad Cyber Crime Unit, Hyderabad",
+    latitude: 17.3850,
+    longitude: 78.4867,
+    current_risk_score: 76.0,
+    forecast_risk_score: 80.0,
+    risk_band: "CRITICAL",
+    complaint_count: 185,
+    dominant_category: "Courier & Customs Fraud"
+  },
+  {
+    id: "loc-kol",
+    state: "West Bengal",
+    district: "Kolkata",
+    police_jurisdiction: "Lalbazar Cyber Crime PS, Kolkata",
+    latitude: 22.5726,
+    longitude: 88.3639,
+    current_risk_score: 68.0,
+    forecast_risk_score: 74.0,
+    risk_band: "HIGH",
+    complaint_count: 156,
+    dominant_category: "Instant Loan App Scam"
+  },
+  {
+    id: "loc-pun",
+    state: "Maharashtra",
+    district: "Pune",
+    police_jurisdiction: "Cyber Police Station, Pune City",
+    latitude: 18.5204,
+    longitude: 73.8567,
+    current_risk_score: 71.0,
+    forecast_risk_score: 75.0,
+    risk_band: "HIGH",
+    complaint_count: 142,
+    dominant_category: "Investment Scam"
+  },
+  {
+    id: "loc-ahm",
+    state: "Gujarat",
+    district: "Ahmedabad",
+    police_jurisdiction: "Cyber Crime Police Station, Ahmedabad",
+    latitude: 23.0225,
+    longitude: 72.5714,
+    current_risk_score: 59.0,
+    forecast_risk_score: 63.0,
+    risk_band: "HIGH",
+    complaint_count: 118,
+    dominant_category: "Fake Customer Support"
+  },
+  {
+    id: "loc-jai",
+    state: "Rajasthan",
+    district: "Jaipur",
+    police_jurisdiction: "Cyber Crime PS, Jaipur",
+    latitude: 26.9124,
+    longitude: 75.7873,
+    current_risk_score: 64.0,
+    forecast_risk_score: 69.0,
+    risk_band: "HIGH",
+    complaint_count: 104,
+    dominant_category: "Job & Part-Time Scam"
+  }
+];
+
 export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
   locations,
   onSelectDistrict,
@@ -70,6 +190,8 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
 }) => {
   const [activeMode, setActiveMode] = useState("CURRENT RISK");
   const [selectedLoc, setSelectedLoc] = useState<RegionalLocation | null>(null);
+
+  const displayLocations = (locations && locations.length > 0) ? locations : DEFAULT_RISK_LOCATIONS;
 
   // Default coordinates centered over India (20.5937 N, 78.9629 E) or target complaint
   const center: [number, number] = targetComplaintLocation?.location
@@ -204,7 +326,7 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
               </CircleMarker>
             ))}
 
-            {locations.map((loc) => {
+            {displayLocations.map((loc) => {
               const color = getMarkerColor(loc);
               const radius = getMarkerRadius(loc);
               return (
