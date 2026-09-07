@@ -2,7 +2,7 @@
 
 import React from "react";
 import {
-  LayoutDashboard, Activity, Map, ShieldAlert,
+  LayoutDashboard, Map, ShieldAlert,
   Users, Network, Settings, FileSpreadsheet
 } from "lucide-react";
 
@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { id: "COMMAND_CENTER", label: "COMMAND CENTER", icon: LayoutDashboard, badge: "LIVE" },
   { id: "COMPLAINTS", label: "COMPLAINTS", icon: ShieldAlert, badge: "10K+" },
   { id: "REPORTS", label: "REPORTS", icon: FileSpreadsheet },
-  { id: "THREAT_OVERVIEW", label: "THREAT OVERVIEW", icon: Activity },
   { id: "CYBER_RISK_MAP", label: "CYBER RISK MAP", icon: Map },
   { id: "THREAT_CLUSTERS", label: "THREAT CLUSTERS", icon: Users },
   { id: "ENTITY_INTELLIGENCE", label: "ENTITY INTELLIGENCE", icon: Network },
