@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { RefreshCw, ArrowLeft, ShieldCheck, Check, AlertCircle, ArrowRight, Lock } from "lucide-react";
+import { RefreshCw, ArrowLeft, ShieldCheck, Check, AlertCircle, ArrowRight, Lock, Sparkles } from "lucide-react";
 
 interface CitizenLoginViewProps {
   onSuccessLogin: () => void;
@@ -57,6 +57,14 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
     setOtp("");
     setCaptchaInput("");
     setErrorMsg("");
+  };
+
+  const handleDemoGoToNextStep = () => {
+    setMobileNo("9876543210");
+    setOtp("123456");
+    setCaptchaInput(captchaText);
+    setErrorMsg("");
+    onSuccessLogin();
   };
 
   return (
@@ -246,6 +254,20 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                 >
                   <span>Submit & Proceed to Step 3</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
+                </button>
+              </div>
+
+              {/* Quick Demo: Go to Next Step Button */}
+              <div className="pt-3 border-t border-gray-200 mt-2">
+                <button
+                  type="button"
+                  onClick={handleDemoGoToNextStep}
+                  className="w-full bg-blue-50 hover:bg-blue-100 text-[#005A9C] border-2 border-dashed border-[#005A9C]/40 hover:border-[#005A9C] font-bold py-2.5 px-4 rounded-lg text-xs shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer font-mono"
+                  title="Instant Demo Skip to Step 3"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>DEMO: GO TO NEXT STEP (STEP 3)</span>
+                  <ArrowRight className="w-4 h-4 text-[#005A9C]" />
                 </button>
               </div>
             </form>
