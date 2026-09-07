@@ -358,31 +358,6 @@ export default function FinancialFraudPortal() {
               )}
 
               {activeSection === "CYBER_RISK_MAP" && <IndiaRiskMap locations={regionalLocs} />}
-              {activeSection === "THREAT_CLUSTERS" && (
-                <div className="space-y-6 font-sans">
-                  <ThreatDNACard
-                    dna={threatClusters[0]?.dna_metrics}
-                    onReviewClick={() => setIsExplainOpen(true)}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {threatClusters.map((tc, idx) => (
-                      <div key={tc.id || idx} className="bg-white border border-slate-200 p-4 rounded-xl space-y-2 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-900">{tc.cluster_name}</span>
-                          <span className="text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 font-mono">
-                            Risk: {tc.risk_score}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600">{tc.modus_operandi}</p>
-                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 font-mono">
-                          <span className="text-slate-500">Nodes: {tc.node_count || 14}</span>
-                          <span className="text-purple-700 font-bold">Region: {tc.primary_state || "National"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {activeSection === "ENTITY_INTELLIGENCE" && <EntityGraph />}
             </main>
