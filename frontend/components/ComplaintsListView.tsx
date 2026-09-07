@@ -42,15 +42,14 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
     try {
       // Fetch up to 250 records for smooth in-browser filtering and fast response
       const data = await api.getComplaints({ limit: 250 });
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setComplaints(data);
       } else {
-        // Fallback demo complaints if offline
-        setComplaints(generateFallbackComplaints());
+        setComplaints([]);
       }
     } catch (e) {
       console.error("Failed to load complaints repository:", e);
-      setComplaints(generateFallbackComplaints());
+      setComplaints([]);
     } finally {
       setIsLoading(false);
     }
@@ -294,6 +293,13 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
+                {paginatedComplaints.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500 font-mono text-xs">
+                      No complaints found in the database.
+                    </td>
+                  </tr>
+                )}
                 {paginatedComplaints.map((c) => {
                   const loss = Number(c.financial_loss || 0);
                   const isCritical = loss >= 150000;
@@ -437,92 +443,3 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
   );
 };
 
-// Fallback seed complaints for uninterrupted local offline demonstrations
-function generateFallbackComplaints() {
-  return [
-    {
-      complaint_number: "202684910294",
-      category: "UPI Impersonation",
-      financial_loss: 185000,
-      district: "Chennai",
-      state: "Tamil Nadu",
-      police_jurisdiction: "Chennai Central Cyber Crime Police Station",
-      channel: "WhatsApp / Messaging",
-      payment_method: "UPI",
-      bank_identifier: "HDFC-0019283719",
-      upi_identifier: "refund.pay347@ybl",
-      status: "OPEN",
-      complaint_timestamp: "2026-09-04 22:15:00"
-    },
-    {
-      complaint_number: "202614509243",
-      category: "Digital Arrest Scam",
-      financial_loss: 275000,
-      district: "Mumbai",
-      state: "Maharashtra",
-      police_jurisdiction: "BKC Cyber Police Station, Mumbai",
-      channel: "Phone Call / Video Call",
-      payment_method: "Bank Transfer (RTGS)",
-      bank_identifier: "ICICI-9948210341",
-      upi_identifier: "investigation.officer@okhdfc",
-      status: "UNDER_REVIEW",
-      complaint_timestamp: "2026-09-04 20:30:00"
-    },
-    {
-      complaint_number: "202662160487",
-      category: "Fake Banking Portal",
-      financial_loss: 320000,
-      district: "New Delhi",
-      state: "Delhi",
-      police_jurisdiction: "Special Cell Cyber Command, Delhi Police",
-      channel: "Phishing Website",
-      payment_method: "IMPS",
-      bank_identifier: "AXIS-7718290123",
-      upi_identifier: "kyc.update@paytm",
-      status: "UNDER_INVESTIGATION",
-      complaint_timestamp: "2026-09-04 19:45:00"
-    },
-    {
-      complaint_number: "202639108472",
-      category: "Instant Loan Scam",
-      financial_loss: 145000,
-      district: "Kolkata",
-      state: "West Bengal",
-      police_jurisdiction: "Lalbazar Cyber Crime PS, Kolkata",
-      channel: "SMS / Malicious APK",
-      payment_method: "UPI",
-      bank_identifier: "PNB-5519283741",
-      upi_identifier: "fastloan.collect@ybl",
-      status: "OPEN",
-      complaint_timestamp: "2026-09-04 18:10:00"
-    },
-    {
-      complaint_number: "202677192834",
-      category: "Investment Fraud",
-      financial_loss: 480000,
-      district: "Bengaluru",
-      state: "Karnataka",
-      police_jurisdiction: "CID Cyber Crime Division, Bengaluru",
-      channel: "Telegram Syndicate",
-      payment_method: "Layered Mule Wire",
-      bank_identifier: "SBI-4418290192",
-      upi_identifier: "vip.trading@oksbi",
-      status: "UNDER_INVESTIGATION",
-      complaint_timestamp: "2026-09-04 16:50:00"
-    },
-    {
-      complaint_number: "202691028345",
-      category: "QR Code Collect Scam",
-      financial_loss: 89000,
-      district: "Hyderabad",
-      state: "Telangana",
-      police_jurisdiction: "Cyberabad Cyber Crime Unit, Hyderabad",
-      channel: "Marketplace / OLX",
-      payment_method: "UPI",
-      bank_identifier: "HDFC-1129384756",
-      upi_identifier: "olx.buyer77@icici",
-      status: "OPEN",
-      complaint_timestamp: "2026-09-04 15:20:00"
-    }
-  ];
-}

@@ -9,11 +9,11 @@ interface CitizenLoginViewProps {
 }
 
 export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLogin, onBack }) => {
-  const [mobileNo, setMobileNo] = useState("9876543210");
-  const [otp, setOtp] = useState("492810");
-  const [captchaInput, setCaptchaInput] = useState("h61r8r");
+  const [mobileNo, setMobileNo] = useState("");
+  const [otp, setOtp] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
   const [captchaText, setCaptchaText] = useState("h61r8r");
-  const [otpSent, setOtpSent] = useState(true);
+  const [otpSent, setOtpSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const refreshCaptcha = () => {

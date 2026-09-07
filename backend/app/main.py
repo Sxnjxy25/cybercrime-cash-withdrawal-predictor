@@ -7,7 +7,7 @@ from app.db.database import engine, Base
 from app.routers import (
     auth, dashboard, complaints, analytics, predictions,
     forecasts, anomalies, threats, entities, warnings,
-    investigations, models, security, audit, copilot, reports, demo
+    investigations, models, security, audit, copilot, reports
 )
 
 # Ensure all database tables exist
@@ -56,7 +56,6 @@ app.include_router(security.router, prefix=prefix)
 app.include_router(audit.router, prefix=prefix)
 app.include_router(copilot.router, prefix=prefix)
 app.include_router(reports.router, prefix=prefix)
-app.include_router(demo.router, prefix=prefix)
 
 @app.get("/")
 def root():

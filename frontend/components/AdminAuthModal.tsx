@@ -17,9 +17,9 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
   onSuccessAuth,
   initialComplaintCode = ""
 }) => {
-  const [username, setUsername] = useState("superadmin");
-  const [password, setPassword] = useState("Password@123");
-  const [agency, setAgency] = useState("I4C Central Cyber Command & Regional Cell");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [agency, setAgency] = useState("");
   const [complaintCode, setComplaintCode] = useState(initialComplaintCode);
   const [errorMsg, setErrorMsg] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);

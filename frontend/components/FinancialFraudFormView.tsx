@@ -24,34 +24,34 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
   const [copied, setCopied] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
-  // Form State: Mandatory + Optional Data
+  // Form State: Mandatory + Optional Data (initialized empty)
   const [formData, setFormData] = useState({
     // 12-Digit Complaint Tracking Code
     complaint_id: generatedCode,
     
     // Mandatory Information
-    bank_name: "State Bank of India",
-    transaction_id: "UTR992144810234",
-    transaction_date: new Date().toISOString().slice(0, 16),
-    amount: "185000",
+    bank_name: "",
+    transaction_id: "",
+    transaction_date: "",
+    amount: "",
     format: "UPI",
-    victim_account: "SBIN-9921448102",
-    mule_account: "HDFC-0019283719",
-    latitude: "22.5726",
-    longitude: "88.3639",
-    city: "Kolkata, West Bengal",
-    incident_narrative: "Victim received fraudulent call masquerading as banking official requesting urgent KYC verification for debit card. An unauthorized IMPS/UPI transfer of INR 1,85,000 was executed to suspect account.",
+    victim_account: "",
+    mule_account: "",
+    latitude: "",
+    longitude: "",
+    city: "",
+    incident_narrative: "",
 
     // Optional / Desirable Information
-    suspect_urls: "https://secure-kyc-update-portal.xyz, @telegram_fastloan",
-    suspect_mobile: "9876543210",
-    suspect_email: "support@verify-kyc-alert.in",
-    suspect_bank_account: "HDFC0001234 - 501009827361",
-    suspect_address: "Sector 62, Industrial Cyber Hub, Noida / Jamtara Corridor",
-    other_identifiers: "Suspect WhatsApp Display Name: 'SBI Support Desk #41'"
+    suspect_urls: "",
+    suspect_mobile: "",
+    suspect_email: "",
+    suspect_bank_account: "",
+    suspect_address: "",
+    other_identifiers: ""
   });
 
-  const [evidenceFileName, setEvidenceFileName] = useState<string | null>("bank_statement_sept_2026.pdf (1.8 MB)");
+  const [evidenceFileName, setEvidenceFileName] = useState<string | null>(null);
   const [suspectPhotoName, setSuspectPhotoName] = useState<string | null>(null);
   
   const [activeTab, setActiveTab] = useState<"MANDATORY" | "OPTIONAL">("MANDATORY");

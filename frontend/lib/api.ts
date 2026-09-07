@@ -77,8 +77,8 @@ export const api = {
     method: "POST",
     body: JSON.stringify({ question })
   }),
-  simulateEmergingThreat: () => fetchWithAuth("/demo/simulate-emerging-threat", { method: "POST" }),
-  resetDemo: () => fetchWithAuth("/demo/reset-demo", { method: "POST" }),
+  simulateEmergingThreat: () => null,
+  resetDemo: () => null,
   predictCashout: (data: any) => fetchWithAuth("/predictions/cashout", {
     method: "POST",
     body: JSON.stringify(data)

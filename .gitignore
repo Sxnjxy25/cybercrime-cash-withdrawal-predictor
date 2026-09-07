@@ -33,6 +33,7 @@ Thumbs.db
 
 # ML Models & Large Binaries (exceeds GitHub 100MB limit)
 *.pkl
+!xgboost_crime_model.pkl
 *.h5
 *.onnx
 *.pt

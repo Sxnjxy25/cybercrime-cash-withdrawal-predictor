@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 import pandas as pd
 from app.db.database import get_db
 from app.models.all_models import Complaint, User
-from app.ml.anomaly_engine import anomaly_engine
+try:
+    from app.ml.anomaly_engine import anomaly_engine
+except ImportError:
+    anomaly_engine = None
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/anomalies", tags=["Anomaly Engine"])
@@ -20,8 +23,11 @@ def get_anomalies(db: Session = Depends(get_db), current_user: User = Depends(ge
         "narrative": c.narrative
     } for c in complaints]
 
-    df = pd.DataFrame(c_dicts)
-    detected = anomaly_engine.detect_spikes_and_anomalies(df)
+    if anomaly_engine is not None and c_dicts:
+        df = pd.DataFrame(c_dicts)
+        detected = anomaly_engine.detect_spikes_and_anomalies(df)
+    else:
+        detected = []
     
     return {
         "intelligence_state": "OBSERVED",

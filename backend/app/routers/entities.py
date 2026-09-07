@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.all_models import Entity, Complaint, User
-from app.ml.entity_engine import entity_engine
+try:
+    from app.ml.entity_engine import entity_engine
+except ImportError:
+    entity_engine = None
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/entities", tags=["Entities & Graph"])
@@ -20,7 +23,10 @@ def get_entity_relationship_graph(db: Session = Depends(get_db), current_user: U
     e_dicts = [{"id": e.id, "entity_type": e.entity_type, "masked_value": e.masked_value, "risk_score": e.risk_score, "total_complaints": e.total_complaints} for e in entities]
     c_dicts = [{"id": c.id, "complaint_number": c.complaint_number, "category": c.category, "state": c.state, "upi_identifier": c.upi_identifier, "mobile_identifier": c.mobile_identifier} for c in complaints]
 
-    graph_data = entity_engine.build_relationship_graph(c_dicts, e_dicts)
+    if entity_engine is not None:
+        graph_data = entity_engine.build_relationship_graph(c_dicts, e_dicts)
+    else:
+        graph_data = {"nodes": [], "edges": [], "communities": []}
     return graph_data
 
 @router.get("/{id}")

@@ -24,7 +24,7 @@ interface AdminComplaintLocationInspectorProps {
 
 export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationInspectorProps> = ({
   adminUser,
-  initialComplaintCode = "202684910294",
+  initialComplaintCode = "",
   onSelectComplaintLocation,
   onLogoutAdmin
 }) => {
@@ -35,13 +35,7 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
   const [isFreezeActive, setIsFreezeActive] = useState(false);
   const [isPatrolDispatched, setIsPatrolDispatched] = useState(false);
 
-  const sampleComplaints = [
-    { code: "202684910294", label: "#202684910294 • Chennai (₹1.85L - UPI Impersonation)" },
-    { code: "202614509243", label: "#202614509243 • Mumbai (₹2.75L - Digital Arrest Scam)" },
-    { code: "202662160487", label: "#202662160487 • New Delhi (₹3.20L - Fake Banking Portal)" },
-    { code: "202639108472", label: "#202639108472 • Kolkata (₹1.45L - Instant Loan Scam)" },
-    { code: "202677192834", label: "#202677192834 • Bengaluru (₹4.80L - Investment Fraud)" }
-  ];
+  const sampleComplaints: { code: string; label: string }[] = [];
 
   const normalizeComplaintData = (raw: any, code: string) => {
     const loc = raw?.location || raw?.geography?.incident_location || {

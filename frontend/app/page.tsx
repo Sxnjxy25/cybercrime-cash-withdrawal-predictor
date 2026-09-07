@@ -39,7 +39,7 @@ export default function FinancialFraudPortal() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminOfficer, setAdminOfficer] = useState<any>(null);
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
-  const [pendingComplaintCode, setPendingComplaintCode] = useState<string>("202684910294");
+  const [pendingComplaintCode, setPendingComplaintCode] = useState<string>("");
   const [targetComplaintLocation, setTargetComplaintLocation] = useState<any>(null);
 
   const [activeSection, setActiveSection] = useState("COMMAND_CENTER");
