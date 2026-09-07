@@ -53,7 +53,6 @@ export default function FinancialFraudPortal() {
   const [isExplainOpen, setIsExplainOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
-  const [isBackendUnreachable, setIsBackendUnreachable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
@@ -61,9 +60,6 @@ export default function FinancialFraudPortal() {
     const s = await api.getDashboardSummary();
     if (s) {
       setSummaryData(s);
-      setIsBackendUnreachable(false);
-    } else {
-      setIsBackendUnreachable(true);
     }
 
     const locs = await api.getRegionalRisk();
@@ -247,24 +243,6 @@ export default function FinancialFraudPortal() {
             <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
 
             <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-              {isBackendUnreachable && (
-                <div className="p-8 rounded-xl bg-white border border-red-200 text-center space-y-4 my-4 shadow-sm">
-                  <AlertTriangle className="w-12 h-12 text-red-600 mx-auto animate-pulse" />
-                  <h2 className="text-xl font-black text-red-600 tracking-wider uppercase font-mono">
-                    INTELLIGENCE SERVICE UNAVAILABLE
-                  </h2>
-                  <p className="text-slate-600 text-sm max-w-md mx-auto">
-                    The predictive intelligence backend is currently unreachable.
-                  </p>
-                  <button
-                    onClick={loadData}
-                    className="px-6 py-2 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold rounded-lg tracking-wider text-xs transition-all cursor-pointer shadow-sm uppercase font-mono"
-                  >
-                    [ RETRY ]
-                  </button>
-                </div>
-              )}
-
               {/* Title Banner in Royal Government Blue */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-[#005A9C] to-[#007CEB] text-white p-5 rounded-xl shadow-md border border-blue-400/30">
                 <div>
