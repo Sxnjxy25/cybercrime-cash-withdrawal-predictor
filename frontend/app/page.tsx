@@ -15,8 +15,6 @@ import { ComplaintsListView } from "@/components/ComplaintsListView";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { IntelligenceFlow } from "@/components/IntelligenceFlow";
-import { GlobalThreatCore } from "@/components/GlobalThreatCore";
-import { RiskScoreGauge } from "@/components/RiskScoreGauge";
 import { IndiaRiskMap } from "@/components/IndiaRiskMap";
 import { ThreatDNACard } from "@/components/ThreatDNACard";
 import { PredictionHorizon } from "@/components/PredictionHorizon";
@@ -318,15 +316,6 @@ export default function FinancialFraudPortal() {
               {/* Command Center Main Layout */}
               {activeSection === "COMMAND_CENTER" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                      <GlobalThreatCore />
-                    </div>
-                    <div>
-                      <RiskScoreGauge score={87} level="CRITICAL RISK" trend="+14.2% THIS WEEK" />
-                    </div>
-                  </div>
-
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
                       <IndiaRiskMap
