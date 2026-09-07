@@ -16,11 +16,82 @@ interface GraphData {
 
 export const EntityGraph: React.FC<{ graphData?: GraphData }> = ({ graphData }) => {
   const initialNodes = graphData?.nodes || [
-    { id: "e1", type: "input", data: { label: "UPI: refund.pay882@ybl\n(Risk 92 - Critical)" }, position: { x: 150, y: 50 }, style: { background: "#FFFFFF", color: "#7C3AED", border: "1.5px solid #7C3AED", fontWeight: "bold" } },
-    { id: "e2", data: { label: "Mobile: +91 98XXXX3210\n(Risk 89)" }, position: { x: 400, y: 50 }, style: { background: "#FFFFFF", color: "#D97706", border: "1.5px solid #D97706", fontWeight: "bold" } },
-    { id: "e3", data: { label: "Domain: secure-verify-991.xyz\n(Risk 95)" }, position: { x: 280, y: 180 }, style: { background: "#FFFFFF", color: "#DC2626", border: "1.5px solid #DC2626", fontWeight: "bold" } },
-    { id: "c1", type: "output", data: { label: "Complaint: NCCP-2026-100042\n(Chennai, TN)" }, position: { x: 100, y: 300 }, style: { background: "#FFFFFF", color: "#0F172A", border: "1px solid #CBD5E1" } },
-    { id: "c2", type: "output", data: { label: "Complaint: NCCP-2026-100098\n(Coimbatore, TN)" }, position: { x: 450, y: 300 }, style: { background: "#FFFFFF", color: "#0F172A", border: "1px solid #CBD5E1" } },
+    {
+      id: "e1",
+      type: "input",
+      data: { label: "UPI: refund.pay882@ybl\n(Risk 92 - Critical)" },
+      position: { x: 220, y: 60 },
+      style: {
+        background: "#FFFFFF",
+        color: "#7C3AED",
+        border: "2px solid #7C3AED",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        fontWeight: "bold",
+        fontSize: "11px",
+        boxShadow: "0 2px 8px rgba(124, 58, 237, 0.12)"
+      }
+    },
+    {
+      id: "e2",
+      data: { label: "Mobile: +91 98XXXX3210\n(Risk 89)" },
+      position: { x: 620, y: 60 },
+      style: {
+        background: "#FFFFFF",
+        color: "#D97706",
+        border: "2px solid #D97706",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        fontWeight: "bold",
+        fontSize: "11px",
+        boxShadow: "0 2px 8px rgba(217, 119, 6, 0.12)"
+      }
+    },
+    {
+      id: "e3",
+      data: { label: "Domain: secure-verify-991.xyz\n(Risk 95)" },
+      position: { x: 420, y: 200 },
+      style: {
+        background: "#FFFFFF",
+        color: "#DC2626",
+        border: "2px solid #DC2626",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        fontWeight: "bold",
+        fontSize: "11px",
+        boxShadow: "0 2px 8px rgba(220, 38, 38, 0.12)"
+      }
+    },
+    {
+      id: "c1",
+      type: "output",
+      data: { label: "Complaint: NCCP-2026-100042\n(Chennai, TN)" },
+      position: { x: 180, y: 350 },
+      style: {
+        background: "#FFFFFF",
+        color: "#0F172A",
+        border: "1.5px solid #005A9C",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        fontSize: "11px",
+        boxShadow: "0 2px 8px rgba(0, 90, 156, 0.1)"
+      }
+    },
+    {
+      id: "c2",
+      type: "output",
+      data: { label: "Complaint: NCCP-2026-100098\n(Coimbatore, TN)" },
+      position: { x: 660, y: 350 },
+      style: {
+        background: "#FFFFFF",
+        color: "#0F172A",
+        border: "1.5px solid #005A9C",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        fontSize: "11px",
+        boxShadow: "0 2px 8px rgba(0, 90, 156, 0.1)"
+      }
+    },
   ];
 
   const initialEdges = graphData?.edges || [
@@ -32,7 +103,7 @@ export const EntityGraph: React.FC<{ graphData?: GraphData }> = ({ graphData }) 
   ];
 
   return (
-    <div className="bg-white border border-slate-200 border-t-4 border-t-[#005A9C] rounded-xl p-4 shadow-sm flex flex-col h-[520px] font-sans">
+    <div className="bg-white border border-slate-200 border-t-4 border-t-[#005A9C] rounded-xl p-4 shadow-sm flex flex-col h-[460px] font-sans">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3 shrink-0">
         <div>
           <h3 className="text-xs font-bold text-[#005A9C] tracking-wider uppercase flex items-center space-x-2 font-mono">
@@ -55,7 +126,12 @@ export const EntityGraph: React.FC<{ graphData?: GraphData }> = ({ graphData }) 
       </div>
 
       <div className="flex-1 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-        <ReactFlow defaultNodes={initialNodes} defaultEdges={initialEdges} fitView>
+        <ReactFlow
+          defaultNodes={initialNodes}
+          defaultEdges={initialEdges}
+          fitView
+          fitViewOptions={{ padding: 0.35, minZoom: 0.6, maxZoom: 1.1 }}
+        >
           <Background color="#E2E8F0" gap={16} />
           <Controls />
           <MiniMap nodeColor="#7C3AED" maskColor="rgba(248, 250, 252, 0.7)" />

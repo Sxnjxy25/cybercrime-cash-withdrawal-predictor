@@ -294,15 +294,15 @@ export default function FinancialFraudPortal() {
               {/* Command Center Main Layout */}
               {activeSection === "COMMAND_CENTER" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                    <div className="lg:col-span-2 flex flex-col">
                       <IndiaRiskMap
                         locations={regionalLocs}
                         targetComplaintLocation={targetComplaintLocation}
                         onSelectDistrict={() => setIsExplainOpen(true)}
                       />
                     </div>
-                    <div className="space-y-4">
+                    <div className="flex flex-col justify-between space-y-4">
                       <ThreatDNACard
                         dna={threatClusters[0]?.dna_metrics}
                         onReviewClick={() => setIsExplainOpen(true)}

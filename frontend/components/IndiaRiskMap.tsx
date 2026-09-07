@@ -92,7 +92,7 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 border-t-4 border-t-[#005A9C] rounded-xl p-4 shadow-sm flex flex-col h-[520px] font-sans">
+    <div className="bg-white border border-slate-200 border-t-4 border-t-[#005A9C] rounded-xl p-4 shadow-sm flex flex-col h-full min-h-[580px] font-sans">
       {/* Map Control Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 shrink-0">
         <div>
@@ -124,12 +124,12 @@ export const IndiaRiskMap: React.FC<IndiaRiskMapProps> = ({
       </div>
 
       {/* Main Map Body */}
-      <div className="relative flex-1 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+      <div className="relative flex-1 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 min-h-[460px]">
         {typeof window !== "undefined" && (
           <MapContainer center={center} zoom={5} scrollWheelZoom={true} className="w-full h-full">
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
             {/* If a specific complaint is selected, fly to its coordinates */}
