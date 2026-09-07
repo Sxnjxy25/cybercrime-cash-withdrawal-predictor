@@ -285,9 +285,9 @@ export default function FinancialFraudPortal() {
               {/* 6-Stage Intelligence Flow Pipeline */}
               <IntelligenceFlow
                 onStageClick={(stageId) => {
-                  if (stageId === "EXPLAINED") setIsExplainOpen(true);
-                  if (stageId === "WARNED") setActiveSection("EARLY_WARNINGS");
-                  if (stageId === "REVIEWED") setActiveSection("EARLY_WARNINGS");
+                  if (stageId === "EXPLAINED" || stageId === "WARNED" || stageId === "REVIEWED") {
+                    setIsExplainOpen(true);
+                  }
                 }}
               />
 
@@ -395,64 +395,6 @@ export default function FinancialFraudPortal() {
               )}
 
               {activeSection === "ENTITY_INTELLIGENCE" && <EntityGraph />}
-              {activeSection === "PREDICTIVE_INTELLIGENCE" && <PredictionHorizon data={forecastData} />}
-
-              {activeSection === "EARLY_WARNINGS" && (
-                <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-4 shadow-sm font-sans">
-                  <h2 className="text-base font-extrabold text-slate-900 uppercase font-mono">EARLY WARNING ENGINE WORKSPACE</h2>
-                  <div className="space-y-3 font-mono">
-                    {earlyWarnings.map((w) => (
-                      <div key={w.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                        <div>
-                          <div className="flex items-center space-x-3 mb-1">
-                            <span className="font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">{w.warning_code}</span>
-                            <span className="text-sm font-bold text-slate-900">{w.threat_name}</span>
-                            <span className="text-[10px] font-mono text-purple-700 font-bold">{w.region}</span>
-                          </div>
-                          <p className="text-slate-600 font-sans">{w.signal_summary}</p>
-                        </div>
-                        <button
-                          onClick={() => handleWarningAction(w.id, "INVESTIGATE")}
-                          className="px-3.5 py-1.5 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold rounded-lg shadow-sm cursor-pointer"
-                        >
-                          OPEN CASE
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-
-              {activeSection === "AUDIT_TRAIL" && (
-                <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-4 font-sans shadow-sm">
-                  <h2 className="text-base font-extrabold text-slate-900 uppercase font-mono">SECURITY & AUDIT TRAIL LOGS</h2>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
-                        <tr>
-                          <th className="p-2.5">TIMESTAMP</th>
-                          <th className="p-2.5">USER</th>
-                          <th className="p-2.5">ROLE</th>
-                          <th className="p-2.5">ACTION</th>
-                          <th className="p-2.5">RESOURCE</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {auditLogs.map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-50">
-                            <td className="p-2.5 text-slate-500">{log.timestamp}</td>
-                            <td className="p-2.5 text-slate-900 font-bold">{log.username}</td>
-                            <td className="p-2.5 text-purple-700 font-bold">{log.role}</td>
-                            <td className="p-2.5 text-amber-800 font-bold">{log.action}</td>
-                            <td className="p-2.5 text-slate-600">{log.resource}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </main>
           </div>
 
