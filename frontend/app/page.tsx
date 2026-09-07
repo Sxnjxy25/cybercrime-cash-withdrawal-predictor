@@ -14,7 +14,6 @@ import { ComplaintsListView } from "@/components/ComplaintsListView";
 
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
-import { IntelligenceFlow } from "@/components/IntelligenceFlow";
 import { IndiaRiskMap } from "@/components/IndiaRiskMap";
 import { ThreatDNACard } from "@/components/ThreatDNACard";
 import { PredictionHorizon } from "@/components/PredictionHorizon";
@@ -281,15 +280,6 @@ export default function FinancialFraudPortal() {
                   </div>
                 </div>
               </div>
-
-              {/* 6-Stage Intelligence Flow Pipeline */}
-              <IntelligenceFlow
-                onStageClick={(stageId) => {
-                  if (stageId === "EXPLAINED" || stageId === "WARNED" || stageId === "REVIEWED") {
-                    setIsExplainOpen(true);
-                  }
-                }}
-              />
 
               {/* Command Center Main Layout */}
               {activeSection === "COMMAND_CENTER" && (
