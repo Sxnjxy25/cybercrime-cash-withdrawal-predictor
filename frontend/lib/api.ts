@@ -124,5 +124,13 @@ export const api = {
     return null;
   },
   getModelInfo: () => fetchWithAuth("/predictions/model-info"),
-  getHealth: () => fetchWithAuth("/health")
+  getHealth: () => fetchWithAuth("/health"),
+  changePassword: (passwords: { current_password: string; new_password: string }) => fetchWithAuth("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(passwords)
+  }),
+  updateProfile: (profile: { full_name: string; email: string; badge_id?: string }) => fetchWithAuth("/auth/profile", {
+    method: "PUT",
+    body: JSON.stringify(profile)
+  })
 };

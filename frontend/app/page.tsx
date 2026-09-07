@@ -18,6 +18,7 @@ import { IndiaRiskMap } from "@/components/IndiaRiskMap";
 import { ThreatDNACard } from "@/components/ThreatDNACard";
 import { PredictionHorizon } from "@/components/PredictionHorizon";
 import { EntityGraph } from "@/components/EntityGraph";
+import { AdminSettingsView } from "@/components/AdminSettingsView";
 import { ExplainableDrawer } from "@/components/ExplainableDrawer";
 import { api } from "@/lib/api";
 import { AlertTriangle, Sparkles, ArrowLeft, ArrowRight, Shield } from "lucide-react";
@@ -360,6 +361,8 @@ export default function FinancialFraudPortal() {
               {activeSection === "CYBER_RISK_MAP" && <IndiaRiskMap locations={regionalLocs} />}
 
               {activeSection === "ENTITY_INTELLIGENCE" && <EntityGraph />}
+
+              {activeSection === "SETTINGS" && <AdminSettingsView adminUser={adminOfficer} />}
             </main>
           </div>
 
