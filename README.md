@@ -22,3 +22,57 @@ CYBERPREDICT X is an India-focused predictive cybercrime intelligence platform d
 ## 🚀 Quick Start Guide
 ## 🛡️ Responsible AI Boundary
 The platform predicts cybercrime trends, spatial-temporal anomalies, threat clusters, and risk scores. Outputs are strictly decision-support signals tagged as `OBSERVED`, `PREDICTED`, `CORRELATED`, `RECOMMENDED`, or `CONFIRMED`. The platform does NOT assert individual criminal guilt or identity.
+## Language used
+## Backend Technology Stack
+
+The CYBERPREDICT X backend is designed as a secure, scalable, API-driven predictive intelligence layer for cybercrime complaint analysis and cash-withdrawal hotspot forecasting.
+
+### Core Backend
+
+* **Python** — Primary backend programming language
+* **FastAPI** — High-performance REST API framework
+* **Pydantic** — Request validation, data modelling, and API schema enforcement
+* **SQLAlchemy** — ORM and database interaction layer
+* **PostgreSQL + PostGIS** — Relational and geospatial data storage for production-scale deployment
+* **SQLite** — Lightweight local development and testing database
+
+### Data & Streaming
+
+* **Pandas** — Data processing and analytical transformations
+* **NumPy** — Numerical computation and feature engineering
+* **Apache Kafka** — Real-time complaint and transaction data ingestion pipeline
+
+### Machine Learning & Predictive Analytics
+
+* **XGBoost / LightGBM** — Predictive risk modelling and cash-out hotspot forecasting
+* **ST-DBSCAN** — Spatio-temporal clustering for identifying geographically and temporally related cybercrime activity
+* **KDE (Kernel Density Estimation)** — GIS-based risk density and hotspot analysis
+* **NetworkX / Graph Analytics** — Relationship and mule-account network analysis
+* **GNN-based Graph Intelligence** — Graph-based analysis of suspicious account relationships and transaction networks
+* **SHAP** — Explainable AI for interpreting prediction and risk-model outputs
+
+
+## Frontend Technology Stack
+
+CYBERPREDICT X uses a modern, responsive and intelligence-focused frontend architecture designed for real-time cybercrime monitoring, predictive analytics visualization, geospatial intelligence and law-enforcement workflows.
+
+### Core Frontend
+
+* **Next.js** — React-based framework for building the application and application routing
+* **TypeScript** — Type-safe frontend development
+* **React** — Component-based user interface architecture
+* **Next.js App Router** — Application routing and page structure
+* **Tailwind CSS** — Utility-first styling and responsive design
+* **shadcn/ui** — Reusable and accessible UI components
+* **Lucide Icons** — Consistent interface iconography
+
+### Data Visualization & Intelligence UI
+
+* **Recharts** — Interactive analytical charts and predictive data visualization
+* **Leaflet** — Interactive geospatial visualization
+* **OpenStreetMap** — Map data and geographic visualization
+* **React Flow** — Entity relationship and intelligence graph visualization
+* **Three.js** — 3D visualization and immersive intelligence interfaces
+* **React Three Fiber** — React integration for Three.js-based 3D components
+* **Framer Motion** — UI transitions, micro-interactions and motion-based visualization
+
