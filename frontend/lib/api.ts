@@ -70,6 +70,8 @@ export const api = {
     body: JSON.stringify(data)
   }),
   getModelObservatory: () => fetchWithAuth("/models"),
+  getModelEvaluation: () => fetchWithAuth("/models/evaluation"),
+  retrainModel: () => fetchWithAuth("/models/retrain", { method: "POST" }),
   getSecurityStatus: () => fetchWithAuth("/security/status"),
   getSecurityEvents: () => fetchWithAuth("/security/events"),
   getAuditLogs: () => fetchWithAuth("/audit-logs"),
@@ -77,8 +79,8 @@ export const api = {
     method: "POST",
     body: JSON.stringify({ question })
   }),
-  simulateEmergingThreat: () => null,
-  resetDemo: () => null,
+  simulateEmergingThreat: () => fetchWithAuth("/demo/simulate-emerging-threat", { method: "POST" }),
+  resetDemo: () => fetchWithAuth("/demo/reset-demo", { method: "POST" }),
   predictCashout: (data: any) => fetchWithAuth("/predictions/cashout", {
     method: "POST",
     body: JSON.stringify(data)

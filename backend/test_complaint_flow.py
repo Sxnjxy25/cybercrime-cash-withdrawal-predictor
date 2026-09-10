@@ -1,13 +1,16 @@
 import sys
+import random
 from datetime import datetime
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
 
+unique_cnum = f"2026{random.randint(10000000, 99999999)}"
+
 # 1. Citizen submits complaint (unauthenticated)
 payload = {
-    "complaint_number": "202688392104",
+    "complaint_number": unique_cnum,
     "source_portal": "Citizen Quick Portal",
     "complaint_timestamp": datetime.utcnow().isoformat(),
     "state": "Maharashtra",

@@ -3,7 +3,7 @@
 import React from "react";
 import {
   LayoutDashboard, Map, ShieldAlert,
-  Network, Settings, FileSpreadsheet
+  Network, Settings, FileSpreadsheet, Cpu
 } from "lucide-react";
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ interface SidebarProps {
 const NAV_ITEMS = [
   { id: "COMMAND_CENTER", label: "COMMAND CENTER", icon: LayoutDashboard, badge: "LIVE" },
   { id: "COMPLAINTS", label: "COMPLAINTS", icon: ShieldAlert, badge: "10K+" },
+  { id: "MODEL_OBSERVATORY", label: "ML MODEL OBSERVATORY", icon: Cpu, badge: "AI" },
   { id: "REPORTS", label: "REPORTS", icon: FileSpreadsheet },
   { id: "CYBER_RISK_MAP", label: "CYBER RISK MAP", icon: Map },
   { id: "ENTITY_INTELLIGENCE", label: "ENTITY INTELLIGENCE", icon: Network },

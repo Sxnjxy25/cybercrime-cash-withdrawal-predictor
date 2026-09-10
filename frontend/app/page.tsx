@@ -19,6 +19,7 @@ import { ThreatDNACard } from "@/components/ThreatDNACard";
 import { PredictionHorizon } from "@/components/PredictionHorizon";
 import { EntityGraph } from "@/components/EntityGraph";
 import { AdminSettingsView } from "@/components/AdminSettingsView";
+import { ModelObservatoryView } from "@/components/ModelObservatoryView";
 import { ExplainableDrawer } from "@/components/ExplainableDrawer";
 import { api } from "@/lib/api";
 import { AlertTriangle, Sparkles, ArrowLeft, ArrowRight, Shield } from "lucide-react";
@@ -357,6 +358,8 @@ export default function FinancialFraudPortal() {
                   />
                 </div>
               )}
+
+              {activeSection === "MODEL_OBSERVATORY" && <ModelObservatoryView />}
 
               {activeSection === "CYBER_RISK_MAP" && <IndiaRiskMap locations={regionalLocs} />}
 

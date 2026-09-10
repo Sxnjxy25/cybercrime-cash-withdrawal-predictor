@@ -184,6 +184,11 @@ class CashoutPredictorService:
         return cls._instance
 
     @classmethod
+    def reload_predictor(cls) -> Optional[XGBoostCashoutPredictor]:
+        cls._instance = None
+        return cls.get_predictor()
+
+    @classmethod
     def predict(cls, input_dict: Dict[str, Any]) -> Dict[str, Any]:
         predictor = cls.get_predictor()
         if predictor is not None:
