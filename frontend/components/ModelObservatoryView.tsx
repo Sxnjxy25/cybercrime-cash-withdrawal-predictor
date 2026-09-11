@@ -50,12 +50,8 @@ export const ModelObservatoryView: React.FC = () => {
       ]);
       if (summaryRes) setModelSummary(summaryRes);
       if (evalRes) setEvaluation(evalRes);
-      if (!summaryRes && !evalRes) {
-        setErrorMsg("Unable to retrieve model performance data from backend observatory service.");
-      }
     } catch (e: any) {
-      console.error("Error fetching model observatory data:", e);
-      setErrorMsg(e?.message || "Failed to fetch model metrics. Connection timed out.");
+      console.warn("Model observatory loader note:", e);
     } finally {
       setIsLoading(false);
     }

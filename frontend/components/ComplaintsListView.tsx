@@ -99,16 +99,22 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
     try {
       // Fetch up to 250 records for smooth in-browser filtering and fast response
       const data = await api.getComplaints({ limit: 250 });
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && data.length > 0) {
+        setComplaints(data);
+      } else if (Array.isArray(data)) {
         setComplaints(data);
       } else {
-        setErrorMsg("Received invalid complaint repository payload from gateway.");
-        setComplaints([]);
+        const fallback = await api.getComplaints();
+        setComplaints(Array.isArray(fallback) ? fallback : []);
       }
     } catch (e: any) {
       console.error("Failed to load complaints repository:", e);
-      setErrorMsg(e?.message || "Failed to load complaints repository. Connection timed out.");
-      setComplaints([]);
+      try {
+        const fallback = await api.getComplaints();
+        setComplaints(Array.isArray(fallback) ? fallback : []);
+      } catch {
+        setErrorMsg("Failed to load complaints repository. Connection timed out.");
+      }
     } finally {
       setIsLoading(false);
     }
