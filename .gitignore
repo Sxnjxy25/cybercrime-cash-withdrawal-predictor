@@ -42,7 +42,13 @@ Thumbs.db
 # Screenshot & Automation Artifacts
 capture_*.js
 frontend/capture_*.js
+test_*.js
+debug_*.js
 *.png
 *.jpg
 *.jpeg
+*.csv
+*.log
+.agents/
+frontend/inspect_live_app.js
 

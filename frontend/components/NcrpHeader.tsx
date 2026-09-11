@@ -45,7 +45,7 @@ export const NcrpHeader: React.FC<NcrpHeaderProps> = ({
             <button
               onClick={() => onNavigate("ADMIN_LOGIN_GATE")}
               className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-2.5 py-0.5 rounded text-[10px] flex items-center space-x-1 transition-all shadow cursor-pointer uppercase tracking-wider"
-              title="Law Enforcement & Admin Login to Threat Map & Observatory"
+              title="Law Enforcement & Admin Login to Threat Map & Intelligence"
             >
               <Lock className="w-3 h-3 text-slate-950" />
               <span>Admin Login 🔒</span>
@@ -79,7 +79,12 @@ export const NcrpHeader: React.FC<NcrpHeaderProps> = ({
         <div className="flex items-center space-x-3 sm:space-x-5">
           {/* Ashoka Lion Emblem */}
           <div className="flex flex-col items-center">
-            <svg viewBox="0 0 100 120" className="w-9 h-11 sm:w-11 sm:h-13 text-amber-800 fill-current">
+            <svg
+              viewBox="0 0 100 120"
+              width="44"
+              height="52"
+              className="w-9 h-11 sm:w-11 sm:h-13 text-amber-800 fill-current max-w-[44px] max-h-[52px]"
+            >
               <path d="M50 5 C40 5 35 15 35 25 C35 32 40 38 45 40 L45 55 C35 52 25 58 20 68 C15 78 20 90 30 95 L30 105 L70 105 L70 95 C80 90 85 78 80 68 C75 58 65 52 55 55 L55 40 C60 38 65 32 65 25 C65 15 60 5 50 5 Z M45 108 L55 108 L55 115 L45 115 Z" fill="#996515" />
               <circle cx="50" cy="25" r="8" fill="#d4af37" />
               <text x="50" y="118" fontSize="8" textAnchor="middle" fill="#555" fontWeight="bold">सत्यमेव जयते</text>

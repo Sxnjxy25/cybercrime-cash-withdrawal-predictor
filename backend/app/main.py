@@ -7,7 +7,8 @@ from app.db.database import engine, Base
 from app.routers import (
     auth, dashboard, complaints, analytics, predictions,
     forecasts, anomalies, threats, entities, warnings,
-    investigations, models, security, audit, copilot, reports, demo
+    investigations, models, security, audit, copilot, reports, demo,
+    alerts_incidents, predictive_forecasting
 )
 
 # Ensure all database tables exist
@@ -37,7 +38,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server processing error occurred. Incident logged into security audit."}
     )
 
-# Include all 17 feature routers
+# Include all 19 feature routers
 prefix = settings.API_V1_STR
 
 app.include_router(auth.router, prefix=prefix)
@@ -57,6 +58,8 @@ app.include_router(audit.router, prefix=prefix)
 app.include_router(copilot.router, prefix=prefix)
 app.include_router(reports.router, prefix=prefix)
 app.include_router(demo.router, prefix=prefix)
+app.include_router(alerts_incidents.router, prefix=prefix)
+app.include_router(predictive_forecasting.router, prefix=prefix)
 
 @app.get("/")
 def root():

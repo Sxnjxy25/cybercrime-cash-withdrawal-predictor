@@ -8,17 +8,24 @@ import {
   Navigation,
   Clock,
   Radio,
-  AlertTriangle,
   UserCheck,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  FileSearch,
+  FileText,
+  Download
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { DossierSkeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { exportActionBriefingPdf, exportHotspotsCsv } from "@/lib/exportUtils";
 
 interface AdminComplaintLocationInspectorProps {
   adminUser: any;
   initialComplaintCode?: string;
   onSelectComplaintLocation: (complaintData: any) => void;
+  onNavigateToComplaints?: () => void;
   onLogoutAdmin: () => void;
 }
 
@@ -26,16 +33,22 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
   adminUser,
   initialComplaintCode = "",
   onSelectComplaintLocation,
+  onNavigateToComplaints,
   onLogoutAdmin
 }) => {
-  const [searchCode, setSearchCode] = useState(initialComplaintCode);
+  const [searchCode, setSearchCode] = useState(initialComplaintCode || "");
   const [complaintData, setComplaintData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState("");
-  const [isFreezeActive, setIsFreezeActive] = useState(false);
-  const [isPatrolDispatched, setIsPatrolDispatched] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
 
-  const sampleComplaints: { code: string; label: string }[] = [];
+  const sampleComplaints: { code: string; label: string }[] = [
+    { code: "202688392104", label: "Case #202688392104 (Mumbai)" },
+    { code: "202677102941", label: "Case #202677102941 (Chennai)" },
+    { code: "202655410982", label: "Case #202655410982 (Delhi)" }
+  ];
 
   const normalizeComplaintData = (raw: any, code: string) => {
     const loc = raw?.location || raw?.geography?.incident_location || {
@@ -110,42 +123,79 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
   };
 
   const inspectComplaint = async (codeToInspect: string) => {
-    if (!codeToInspect.trim()) return;
+    if (!codeToInspect.trim()) {
+      setErrorMsg("Please enter a valid 12-digit complaint tracking ID.");
+      setComplaintData(null);
+      return;
+    }
     setIsLoading(true);
+    setErrorMsg(null);
     setActionSuccessMsg("");
-    setIsFreezeActive(false);
-    setIsPatrolDispatched(false);
 
     try {
       const data = await api.adminInspectComplaint(codeToInspect.trim());
-      const normalized = normalizeComplaintData(data, codeToInspect.trim());
-      setComplaintData(normalized);
-      onSelectComplaintLocation(normalized);
-    } catch (e) {
+      if (data) {
+        const normalized = normalizeComplaintData(data, codeToInspect.trim());
+        setComplaintData(normalized);
+        onSelectComplaintLocation(normalized);
+      } else {
+        setErrorMsg(`Complaint #${codeToInspect.trim()} could not be located in the national registry.`);
+        setComplaintData(null);
+      }
+    } catch (e: any) {
       console.error("Failed to inspect complaint:", e);
-      const fallback = normalizeComplaintData(null, codeToInspect.trim());
-      setComplaintData(fallback);
-      onSelectComplaintLocation(fallback);
+      setErrorMsg(e?.message || `Failed to fetch forensic dossier for #${codeToInspect.trim()}. Connection timed out.`);
+      setComplaintData(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (initialComplaintCode) {
-      setSearchCode(initialComplaintCode);
-      inspectComplaint(initialComplaintCode);
+    const code = (initialComplaintCode || "").trim();
+    setSearchCode(code);
+    if (code) {
+      inspectComplaint(code);
+    } else {
+      setComplaintData(null);
+      setErrorMsg(null);
+      setActionSuccessMsg("");
     }
   }, [initialComplaintCode]);
 
-  const handleFreeze = () => {
-    setIsFreezeActive(true);
-    setActionSuccessMsg(`CFCFRMS Emergency Freeze broadcasted across ${complaintData?.victim_bank} & beneficiary node.`);
+  const handleExportBriefingPdf = () => {
+    if (!complaintData) return;
+    setIsExportingPdf(true);
+    try {
+      const fileName = exportActionBriefingPdf(complaintData, adminUser);
+      setActionSuccessMsg(`Law Enforcement Action Briefing PDF generated successfully: ${fileName}`);
+    } catch (err: any) {
+      console.error("PDF generation failed:", err);
+      setErrorMsg("Failed to generate PDF Action Briefing. Please try again.");
+    } finally {
+      setTimeout(() => {
+        setIsExportingPdf(false);
+      }, 600);
+    }
   };
 
-  const handleDispatch = () => {
-    setIsPatrolDispatched(true);
-    setActionSuccessMsg(`PCR Patrol Unit Unit-04 dispatched to ${complaintData?.forecasted_atm_hotspots?.[0]?.atm_name} (ETA: 3 mins).`);
+  const handleExportHotspotsCsv = () => {
+    if (!complaintData?.forecasted_atm_hotspots?.length) {
+      alert("No forecasted ATM hotspots available to export for this case.");
+      return;
+    }
+    setIsExportingCsv(true);
+    try {
+      const fileName = exportHotspotsCsv(complaintData.forecasted_atm_hotspots, complaintData.complaint_code);
+      setActionSuccessMsg(`Active ATM Hotspots CSV downloaded: ${fileName}`);
+    } catch (err: any) {
+      console.error("CSV generation failed:", err);
+      setErrorMsg("Failed to export Hotspots CSV.");
+    } finally {
+      setTimeout(() => {
+        setIsExportingCsv(false);
+      }, 600);
+    }
   };
 
   return (
@@ -240,10 +290,28 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
         </div>
       )}
 
-      {/* Complaint Geolocation & Crime Location Dossier */}
-      {complaintData && (
+      {/* Dynamic Content: Skeleton, Error, Dossier, or Empty */}
+      {isLoading ? (
+        <DossierSkeleton />
+      ) : errorMsg ? (
+        <ErrorState
+          title="Forensic Dossier Lookup Failed"
+          message={errorMsg}
+          errorCode="ERR_CASE_FILE_FETCH"
+          onRetry={() => inspectComplaint(searchCode)}
+          retryLabel="Retry Case File Search"
+          secondaryAction={{
+            label: "Clear Search",
+            onClick: () => {
+              setSearchCode("");
+              setErrorMsg(null);
+              setComplaintData(null);
+            }
+          }}
+        />
+      ) : complaintData ? (
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 animate-fadeIn">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div className="flex items-center space-x-2">
               <span className="text-xs text-slate-500 font-bold font-mono">CASE FILE:</span>
               <span className="text-base font-black text-slate-900 tracking-widest font-mono">
@@ -252,16 +320,36 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
               <span className="bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono">
                 {complaintData.status}
               </span>
+              <span className="text-xs text-slate-400 font-mono hidden md:inline">|</span>
+              <span className="text-[11px] text-amber-800 font-bold hidden md:inline">{complaintData.category}</span>
             </div>
 
-            <div className="text-right text-xs">
-              <span className="text-slate-500 text-[10px] font-mono">CATEGORY: </span>
-              <span className="text-amber-800 font-bold">{complaintData.category}</span>
+            {/* Officer Law Enforcement Export Action Center */}
+            <div className="flex flex-wrap items-center gap-2 font-mono">
+              <button
+                onClick={handleExportBriefingPdf}
+                disabled={isExportingPdf}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                title="Generate formal Law Enforcement Action Briefing & Court Order Requisition PDF"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{isExportingPdf ? "Compiling PDF..." : "Export Action Briefing (PDF)"}</span>
+              </button>
+
+              <button
+                onClick={handleExportHotspotsCsv}
+                disabled={isExportingCsv}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                title="Download active forecasted ATM coordinates and risk scores to CSV for field units"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{isExportingCsv ? "Exporting CSV..." : "Export Hotspots (CSV)"}</span>
+              </button>
             </div>
           </div>
 
           {/* Grid Details: Location + Financials */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {/* 1. Incident Location */}
             <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-1.5 shadow-sm">
               <div className="flex items-center space-x-1.5 text-[#005A9C] font-bold text-[11px] font-mono">
@@ -295,63 +383,50 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
                 Mule Acc: {complaintData.suspect_mule_account || "N/A"}
               </p>
             </div>
-
-            {/* 3. Urgency & Interceptions */}
-            <div className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2 flex flex-col justify-between shadow-sm">
-              <div>
-                <div className="flex items-center space-x-1.5 text-red-600 font-bold text-[11px] font-mono">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>URGENCY INTERCEPTION</span>
-                </div>
-                <p className="text-xs font-black text-red-600 mt-1 uppercase tracking-tight font-mono">
-                  {complaintData.urgency_level || "CRITICAL IMMEDIATE INTERCEPTION"}
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2 pt-1 font-mono">
-                <button
-                  onClick={handleFreeze}
-                  disabled={isFreezeActive}
-                  className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-[10px] font-bold py-1.5 rounded transition-all cursor-pointer uppercase disabled:opacity-50"
-                >
-                  {isFreezeActive ? "✓ FROZEN" : "CFCFRMS FREEZE"}
-                </button>
-
-                <button
-                  onClick={handleDispatch}
-                  disabled={isPatrolDispatched}
-                  className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#005A9C] text-[10px] font-bold py-1.5 rounded transition-all cursor-pointer uppercase disabled:opacity-50"
-                >
-                  {isPatrolDispatched ? "✓ DISPATCHED" : "DISPATCH PCR"}
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* ATM Forecasted Terminals Matrix */}
           <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono">
               <div className="flex items-center space-x-2 text-xs font-bold text-[#005A9C]">
                 <Navigation className="w-3.5 h-3.5" />
                 <span>FORECASTED ATM CASH-OUT TERMINALS (PINPOINTED AROUND CRIME RADIUS)</span>
               </div>
-              <span className="text-[10px] text-slate-500">
-                Radius: ~1.5 km • Predictive Mule Vectors
-              </span>
+              <div className="flex items-center space-x-3 text-[10px]">
+                <span className="text-slate-500 hidden sm:inline">
+                  Radius: ~1.5 km • Predictive Mule Vectors
+                </span>
+                <button
+                  onClick={handleExportHotspotsCsv}
+                  className="text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded font-bold transition-all flex items-center space-x-1 cursor-pointer"
+                  title="Export this pinpointed ATM hotspot list to CSV"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Download Coordinates CSV</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {(complaintData.forecasted_atm_hotspots || []).map((atm: any, idx: number) => (
                 <div
-                  key={atm.atm_id || idx}
-                  className="bg-white border border-slate-200 hover:border-blue-300 p-3 rounded-lg space-y-1.5 transition-all text-[11px] shadow-sm font-sans"
+                  key={atm.atm_id}
+                  className="bg-white border border-slate-200 hover:border-[#005A9C] p-3 rounded-lg shadow-sm space-y-2 transition-all cursor-pointer group"
+                  onClick={() => onSelectComplaintLocation({
+                    ...complaintData,
+                    location: {
+                      ...complaintData.location,
+                      latitude: atm.latitude,
+                      longitude: atm.longitude
+                    }
+                  })}
                 >
-                  <div className="flex items-center justify-between font-mono">
-                    <span className="font-bold text-slate-900 truncate max-w-[170px]" title={atm.atm_name}>
-                      {atm.atm_name || `ATM Point #${idx+1}`}
+                  <div className="flex items-start justify-between">
+                    <span className="font-bold text-slate-900 text-xs group-hover:text-[#005A9C] line-clamp-1">
+                      {atm.atm_name}
                     </span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      idx === 0
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                      Number(atm.cashout_risk_score || 0) >= 0.9
                         ? "bg-red-50 text-red-700 border border-red-200"
                         : "bg-blue-50 text-[#005A9C] border border-blue-200"
                     }`}>
@@ -359,25 +434,40 @@ export const AdminComplaintLocationInspector: React.FC<AdminComplaintLocationIns
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-slate-500 text-[10px] font-mono">
-                    <span>GPS: {Number(atm.latitude || 0).toFixed(4)}, {Number(atm.longitude || 0).toFixed(4)}</span>
-                    <span className="text-slate-800 font-bold">{atm.distance_km || 0.5} km</span>
+                  <div className="grid grid-cols-2 gap-1 text-[11px] font-mono text-slate-600">
+                    <div>Dist: <strong className="text-slate-900">{atm.distance_km} km</strong></div>
+                    <div>ETA: <strong className="text-amber-800">{atm.estimated_arrival_eta_mins} mins</strong></div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-100 font-mono">
-                    <span className="text-amber-800 flex items-center space-x-1 font-bold">
-                      <Clock className="w-3 h-3 inline" />
-                      <span>ETA: {atm.estimated_arrival_eta_mins || 5} mins</span>
-                    </span>
-                    <span className="text-emerald-700 text-[9px] font-bold">
-                      {atm.cctv_status || "FEED_STREAMING_ONLINE"}
-                    </span>
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] font-mono">
+                    <span className="text-emerald-700 font-bold">{atm.cctv_status}</span>
+                    <span className="text-[#005A9C] group-hover:underline font-bold">Pinpoint →</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+      ) : (
+        <EmptyState
+          icon={FileSearch}
+          title="No Complaint Selected for Inspection"
+          description="Enter a 12-digit complaint tracking ID in the search bar above or select any complaint from the Complaints Database to inspect its live incident location and forecasted cash-out terminals."
+          actionLabel={onNavigateToComplaints ? "Go to Complaints Database" : "Inspect Sample Case #202688392104"}
+          onAction={() => {
+            if (onNavigateToComplaints) {
+              onNavigateToComplaints();
+            } else {
+              setSearchCode("202688392104");
+              inspectComplaint("202688392104");
+            }
+          }}
+          secondaryActionLabel={onNavigateToComplaints ? "Inspect Sample Case #202688392104" : undefined}
+          onSecondaryAction={onNavigateToComplaints ? () => {
+            setSearchCode("202688392104");
+            inspectComplaint("202688392104");
+          } : undefined}
+        />
       )}
     </div>
   );

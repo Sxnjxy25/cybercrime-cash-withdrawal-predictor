@@ -14,9 +14,15 @@ import {
   Check,
   Calendar,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileText,
+  Download
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { exportComplaintsCsv, exportComplaintsSummaryPdf } from "@/lib/exportUtils";
 
 interface ComplaintsListViewProps {
   onSelectComplaint: (complaintCode: string, complaintData?: any) => void;
@@ -27,7 +33,10 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
 }) => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,18 +46,68 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  const handleExportComplaintsCsv = () => {
+    if (!filteredComplaints.length) {
+      alert("No complaints match the current filter to export.");
+      return;
+    }
+    setIsExportingCsv(true);
+    try {
+      const filterLabel = selectedCategory === "ALL" ? "All" : selectedCategory.replace(/[^a-zA-Z0-9]/g, "_");
+      exportComplaintsCsv(filteredComplaints, filterLabel);
+    } catch (err) {
+      console.error("Complaints CSV export failed:", err);
+    } finally {
+      setTimeout(() => {
+        setIsExportingCsv(false);
+      }, 600);
+    }
+  };
+
+  const handleExportComplaintsPdf = () => {
+    if (!filteredComplaints.length) {
+      alert("No complaints available to compile summary PDF.");
+      return;
+    }
+    setIsExportingPdf(true);
+    try {
+      exportComplaintsSummaryPdf(
+        filteredComplaints,
+        undefined,
+        selectedCategory === "ALL" ? "Active Complaints" : selectedCategory
+      );
+    } catch (err) {
+      console.error("Complaints PDF export failed:", err);
+    } finally {
+      setTimeout(() => {
+        setIsExportingPdf(false);
+      }, 600);
+    }
+  };
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("ALL");
+    setSelectedStatus("ALL");
+    setSelectedRisk("ALL");
+    setCurrentPage(1);
+  };
+
   const loadComplaints = async () => {
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       // Fetch up to 250 records for smooth in-browser filtering and fast response
       const data = await api.getComplaints({ limit: 250 });
       if (Array.isArray(data)) {
         setComplaints(data);
       } else {
+        setErrorMsg("Received invalid complaint repository payload from gateway.");
         setComplaints([]);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to load complaints repository:", e);
+      setErrorMsg(e?.message || "Failed to load complaints repository. Connection timed out.");
       setComplaints([]);
     } finally {
       setIsLoading(false);
@@ -226,14 +285,35 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
           </div>
         </div>
 
-        {/* Filter meta row */}
-        <div className="flex flex-wrap items-center justify-between text-xs pt-2 border-t border-slate-100">
+        {/* Filter meta row with Export Controls for Authenticated Officers */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-slate-100">
           <span className="text-slate-500 font-mono text-[11px]">
             Showing <strong className="text-slate-900">{filteredComplaints.length}</strong> matching complaints
             {complaints.length > 0 && ` (from ${complaints.length} indexed records)`}
           </span>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2 font-mono">
+            {/* Officer Law Enforcement Data Export Controls */}
+            <button
+              onClick={handleExportComplaintsCsv}
+              disabled={isExportingCsv || filteredComplaints.length === 0}
+              className="text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-[11px] font-bold flex items-center space-x-1.5 cursor-pointer px-2.5 py-1 rounded-lg transition-all disabled:opacity-50"
+              title="Download current filtered complaints dataset to CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-700" />
+              <span>{isExportingCsv ? "Exporting CSV..." : "Export Ledger (CSV)"}</span>
+            </button>
+
+            <button
+              onClick={handleExportComplaintsPdf}
+              disabled={isExportingPdf || filteredComplaints.length === 0}
+              className="text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-300 text-[11px] font-bold flex items-center space-x-1.5 cursor-pointer px-2.5 py-1 rounded-lg transition-all disabled:opacity-50"
+              title="Compile and download Executive Summary Briefing PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-red-700" />
+              <span>{isExportingPdf ? "Compiling PDF..." : "Export Summary (PDF)"}</span>
+            </button>
+
             {(searchQuery || selectedCategory !== "ALL" || selectedRisk !== "ALL" || selectedStatus !== "ALL") && (
               <button
                 onClick={() => {
@@ -243,7 +323,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   setSelectedStatus("ALL");
                   setCurrentPage(1);
                 }}
-                className="text-[#005A9C] text-[11px] font-bold hover:underline cursor-pointer"
+                className="text-[#005A9C] text-[11px] font-bold hover:underline cursor-pointer px-1"
               >
                 Reset Filters
               </button>
@@ -252,7 +332,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
             <button
               onClick={loadComplaints}
               disabled={isLoading}
-              className="text-slate-600 hover:text-slate-900 text-[11px] font-bold flex items-center space-x-1 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded transition-all"
+              className="text-slate-600 hover:text-slate-900 text-[11px] font-bold flex items-center space-x-1 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-all"
             >
               <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin text-[#005A9C]" : ""}`} />
               <span>Refresh</span>
@@ -263,20 +343,35 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
 
       {/* Complaints Grid / Table */}
       {isLoading ? (
-        <div className="bg-white p-12 rounded-xl border border-slate-200 text-center space-y-3 shadow-sm">
-          <RefreshCw className="w-8 h-8 text-[#005A9C] animate-spin mx-auto" />
-          <p className="text-xs font-bold text-slate-700 font-mono uppercase tracking-wider">
-            Loading Official Complaints Repository...
-          </p>
-        </div>
+        <TableSkeleton rows={8} cols={7} />
+      ) : errorMsg ? (
+        <ErrorState
+          title="Complaints Feed Disconnected"
+          message={errorMsg}
+          errorCode="ERR_COMPLAINTS_SYNC_FAILED"
+          onRetry={loadComplaints}
+          retryLabel="Reconnect & Reload"
+          secondaryAction={{
+            label: "Reset Active Filters",
+            onClick: resetFilters
+          }}
+        />
       ) : filteredComplaints.length === 0 ? (
-        <div className="bg-white p-12 rounded-xl border border-slate-200 text-center space-y-3 shadow-sm">
-          <ShieldAlert className="w-10 h-10 text-slate-400 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">No matching complaints found</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Try adjusting your search query, threat category, or risk level filters.
-          </p>
-        </div>
+        complaints.length === 0 ? (
+          <EmptyState
+            title="Complaints Repository Empty"
+            description="There are currently no financial fraud complaints ingested into the registry."
+            secondaryActionLabel="Refresh Repository"
+            onSecondaryAction={loadComplaints}
+          />
+        ) : (
+          <EmptyState
+            title="No Matching Complaints Found"
+            description="None of the registered complaints match your current search and filter combination."
+            actionLabel="Clear All Filters"
+            onAction={resetFilters}
+          />
+        )
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">

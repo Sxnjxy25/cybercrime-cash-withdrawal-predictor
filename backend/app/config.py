@@ -1,5 +1,9 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_SQLITE_PATH = BASE_DIR / "cyberpredictx.db"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CYBERPREDICT X"
@@ -9,7 +13,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
-    # SQLite default, easily switches to PostgreSQL if DATABASE_URL env var set
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./cyberpredictx.db")
+    # SQLite default with reliable absolute path, easily switches to PostgreSQL if DATABASE_URL env var set
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_SQLITE_PATH.as_posix()}")
 
 settings = Settings()

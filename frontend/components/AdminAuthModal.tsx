@@ -20,9 +20,16 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [agency, setAgency] = useState("I4C Central Cyber Command & Regional Cell");
-  const [complaintCode, setComplaintCode] = useState(initialComplaintCode);
+  const [complaintCode, setComplaintCode] = useState(initialComplaintCode || "");
   const [errorMsg, setErrorMsg] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setComplaintCode(initialComplaintCode || "");
+      setErrorMsg("");
+    }
+  }, [isOpen, initialComplaintCode]);
 
   if (!isOpen) return null;
 
@@ -80,7 +87,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
       role: "SUPER_ADMIN",
       badge_id: "IND-CMD-001",
       agency: "I4C Central Cyber Command & Regional Cell"
-    }, complaintCode || "202684910294");
+    }, complaintCode || "");
     onClose();
   };
 
@@ -118,7 +125,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
 
         {/* Notice Banner */}
         <div className="bg-blue-50/80 border-b border-blue-100 px-5 py-3 text-xs text-slate-700 leading-relaxed font-sans">
-          The <strong className="text-[#005A9C]">National Financial Threat Map & Observatory</strong> is restricted to authorized Police Officers and Cyber Command Admins to inspect the specific crime location and forecasted cash-out ATM coordinates for specific citizen complaints.
+          The <strong className="text-[#005A9C]">National Financial Threat Map & Central Intelligence</strong> is restricted to authorized Police Officers and Cyber Command Admins to inspect the specific crime location and forecasted cash-out ATM coordinates for specific citizen complaints.
         </div>
 
         {/* Form Body */}
@@ -197,6 +204,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
 
           <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
             <button
+              id="btn-admin-auth-submit"
               type="submit"
               disabled={isAuthenticating}
               className="flex-1 bg-[#005A9C] hover:bg-[#00487D] text-white font-bold py-2.5 px-4 rounded-xl shadow-sm text-xs tracking-wide uppercase transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 font-mono"
@@ -206,6 +214,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({
             </button>
 
             <button
+              id="btn-admin-auth-demo"
               type="button"
               onClick={handleQuickDemoAuth}
               className="bg-blue-50 hover:bg-blue-100 text-[#005A9C] border border-blue-200 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm font-mono"

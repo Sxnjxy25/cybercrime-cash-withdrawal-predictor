@@ -6,7 +6,7 @@ from app.db.database import SessionLocal, engine, Base
 from app.models.all_models import (
     User, Complaint, LocationRisk, Entity, ThreatCluster, ThreatClusterMember,
     Forecast, Anomaly, RiskScore, EarlyWarning, Investigation, InvestigationNote,
-    Feedback, AuditLog, ModelMetric
+    Feedback, AuditLog, ModelMetric, TelemetryIncident
 )
 from app.services.auth_service import get_password_hash
 from app.services.pii_service import mask_pii
@@ -50,7 +50,7 @@ def seed_database():
     # Clear existing mock data cleanly
     print("Purging stale tables...")
     for model in [
-        ThreatClusterMember, ThreatCluster, EarlyWarning, InvestigationNote,
+        TelemetryIncident, ThreatClusterMember, ThreatCluster, EarlyWarning, InvestigationNote,
         Investigation, Feedback, AuditLog, ModelMetric, Forecast, Anomaly,
         RiskScore, Entity, Complaint, LocationRisk, User
     ]:
@@ -297,6 +297,155 @@ def seed_database():
         status="ACTIVE"
     )
     db.add(model_m)
+
+    print("Seeding Automated Telemetry Incidents (SIEM / EDR / Firewall)...")
+    telemetry_templates = [
+        {
+            "title": "Cobalt Strike HTTPS Beaconing Ingress",
+            "severity": "CRITICAL",
+            "source_type": "FIREWALL",
+            "source_tool": "Palo Alto NGFW-PA5200",
+            "target_host": "PROXY-DMZ-02.BANK.IN",
+            "mitre_tactic": "Command and Control",
+            "mitre_technique": "T1071.001 - Web Protocols (C2 Beaconing)",
+            "rule": "SIG-FW-C2-MALICIOUS-HEURISTIC-BURST"
+        },
+        {
+            "title": "Mimikatz LSASS Process Memory Dump Attempt",
+            "severity": "CRITICAL",
+            "source_type": "EDR",
+            "source_tool": "CrowdStrike Falcon",
+            "target_host": "DC-PRIMARY-01.BANK.IN",
+            "mitre_tactic": "Credential Access",
+            "mitre_technique": "T1003.001 - OS Credential Dumping: LSASS Memory",
+            "rule": "CS-RULE-CREDENTIAL-DUMP-LSASS"
+        },
+        {
+            "title": "Abnormal Mule Account Bulk API Query Rate (1,200 req/min)",
+            "severity": "CRITICAL",
+            "source_type": "SIEM",
+            "source_tool": "Splunk Enterprise SIEM",
+            "target_host": "API-UPI-GATEWAY-01",
+            "mitre_tactic": "Exfiltration",
+            "mitre_technique": "T1567 - Exfiltration Over Web Service",
+            "rule": "SIEM-UPI-VELOCITY-OUTLIER-FLAG"
+        },
+        {
+            "title": "Kerberoasting SPN Ticket Extraction Surge",
+            "severity": "CRITICAL",
+            "source_type": "EDR",
+            "source_tool": "Microsoft Defender for Endpoint",
+            "target_host": "DC-SECONDARY-02.BANK.IN",
+            "mitre_tactic": "Credential Access",
+            "mitre_technique": "T1558.003 - Steal or Forge Kerberos Tickets: Kerberoasting",
+            "rule": "MDE-SPN-TICKET-REQUEST-ANOMALY"
+        },
+        {
+            "title": "Unusual Cash-Out ATM Terminal Switch Polling Spike",
+            "severity": "CRITICAL",
+            "source_type": "NDR",
+            "source_tool": "Suricata NDR",
+            "target_host": "ATM-SWITCH-MUM-01",
+            "mitre_tactic": "Lateral Movement",
+            "mitre_technique": "T1021.002 - SMB/Windows Admin Shares",
+            "rule": "SURICATA-ATM-ISO8583-SURGE"
+        },
+        {
+            "title": "Privileged Admin Escalation via Shadow Credentials",
+            "severity": "CRITICAL",
+            "source_type": "IAM",
+            "source_tool": "CyberArk Privileged Access",
+            "target_host": "IAM-VAULT-PRIMARY",
+            "mitre_tactic": "Privilege Escalation",
+            "mitre_technique": "T1078.002 - Valid Accounts: Domain Accounts",
+            "rule": "CYBERARK-SHADOW-CRED-INJECTION"
+        },
+        {
+            "title": "Automated SQL Injection Exploit Probe on NetBanking API",
+            "severity": "CRITICAL",
+            "source_type": "FIREWALL",
+            "source_tool": "Fortinet FortiGate-600F",
+            "target_host": "WAF-NETBANK-PROD",
+            "mitre_tactic": "Initial Access",
+            "mitre_technique": "T1190 - Exploit Public-Facing Application",
+            "rule": "FORTI-WAF-SQLI-TIME-BASED-BLIND"
+        },
+        {
+            "title": "Ransomware Canary Directory Canary File Renamed",
+            "severity": "CRITICAL",
+            "source_type": "EDR",
+            "source_tool": "SentinelOne Singularity",
+            "target_host": "FS-CORE-RECORDS-01",
+            "mitre_tactic": "Impact",
+            "mitre_technique": "T1486 - Data Encrypted for Impact",
+            "rule": "S1-BEHAVIORAL-CANARY-TRIPPED"
+        },
+        {
+            "title": "Cross-Subnet Lateral Movement via PsExec Service Creation",
+            "severity": "HIGH",
+            "source_type": "EDR",
+            "source_tool": "CrowdStrike Falcon",
+            "target_host": "SWIFT-ALLIANCE-GATE",
+            "mitre_tactic": "Lateral Movement",
+            "mitre_technique": "T1021.002 - SMB/Windows Admin Shares",
+            "rule": "CS-PSEXEC-SERVICE-REMOTE-EXEC"
+        },
+        {
+            "title": "DNS Tunneling Detected via TXT Query Infiltration",
+            "severity": "HIGH",
+            "source_type": "NDR",
+            "source_tool": "Zeek Network Security",
+            "target_host": "DNS-RECURSOR-INT-01",
+            "mitre_tactic": "Command and Control",
+            "mitre_technique": "T1071.004 - DNS Tunneling",
+            "rule": "ZEEK-DNS-HIGH-ENTROPY-TXT"
+        }
+    ]
+
+    telemetry_incidents = []
+    # Seed 112 incidents: 102 CRITICAL (supporting 99+ CRIT badge), 8 HIGH, 2 MEDIUM
+    for i in range(112):
+        tpl = telemetry_templates[i % len(telemetry_templates)]
+        # Force 102 criticals
+        severity = "CRITICAL" if i < 102 else ("HIGH" if i < 110 else "MEDIUM")
+        status_options = ["NEW", "NEW", "NEW", "TRIAGED", "ESCALATED", "CONTAINED"]
+        triage_status = status_options[i % len(status_options)] if i > 15 else "NEW"
+
+        minutes_ago = (i * 24) + random.randint(1, 45)
+        evt_time = datetime.utcnow() - timedelta(minutes=minutes_ago)
+        code = f"ALT-{tpl['source_type']}-{10000 + i}"
+
+        inc = TelemetryIncident(
+            incident_code=code,
+            title=f"{tpl['title']} #{i+1}" if i >= len(telemetry_templates) else tpl['title'],
+            severity=severity,
+            source_type=tpl["source_type"],
+            source_tool=tpl["source_tool"],
+            timestamp=evt_time,
+            triage_status=triage_status,
+            target_host=tpl["target_host"],
+            target_ip=f"10.240.{random.randint(1, 50)}.{random.randint(2, 254)}",
+            source_ip=f"185.220.{random.randint(100, 240)}.{random.randint(1, 250)}",
+            mitre_tactic=tpl["mitre_tactic"],
+            mitre_technique=tpl["mitre_technique"],
+            detection_rule=tpl["rule"],
+            event_count=random.randint(12, 4500),
+            confidence_score=round(random.uniform(0.92, 0.99), 2),
+            raw_payload={
+                "sensor_agent": tpl["source_tool"],
+                "protocol": "TCP/TLS",
+                "bytes_transferred": random.randint(45000, 1840000),
+                "alert_fingerprint": f"SHA256:{random.getrandbits(128):032x}",
+                "automated_containment_action": "Firewall IP Drop & Host Token Freeze Triggered" if severity == "CRITICAL" else "Monitoring"
+            },
+            analyst_notes="Automated SIEM/EDR high-velocity telemetry alert ingested via sensor ingestion pipeline." if triage_status != "NEW" else None,
+            assigned_to="Insp. Rajesh Kumar" if triage_status in ["ESCALATED", "CONTAINED"] else "Unassigned"
+        )
+        telemetry_incidents.append(inc)
+
+    db.add_all(telemetry_incidents)
+    db.commit()
+    print(f"Seeded {len(telemetry_incidents)} Telemetry Incidents (including 102 CRITICAL alerts).")
 
     audit = AuditLog(
         username="superadmin",

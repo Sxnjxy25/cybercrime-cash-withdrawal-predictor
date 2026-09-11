@@ -11,16 +11,16 @@ import { ComplaintWithdrawalModal } from "@/components/ComplaintWithdrawalModal"
 import { AdminAuthModal } from "@/components/AdminAuthModal";
 import { AdminComplaintLocationInspector } from "@/components/AdminComplaintLocationInspector";
 import { ComplaintsListView } from "@/components/ComplaintsListView";
+import { AlertsIncidentsView } from "@/components/AlertsIncidentsView";
 
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { IndiaRiskMap } from "@/components/IndiaRiskMap";
-import { ThreatDNACard } from "@/components/ThreatDNACard";
-import { PredictionHorizon } from "@/components/PredictionHorizon";
 import { EntityGraph } from "@/components/EntityGraph";
 import { AdminSettingsView } from "@/components/AdminSettingsView";
-import { ModelObservatoryView } from "@/components/ModelObservatoryView";
 import { ExplainableDrawer } from "@/components/ExplainableDrawer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { api } from "@/lib/api";
 import { AlertTriangle, Sparkles, ArrowLeft, ArrowRight, Shield } from "lucide-react";
 
@@ -41,7 +41,7 @@ export default function FinancialFraudPortal() {
   const [pendingComplaintCode, setPendingComplaintCode] = useState<string>("");
   const [targetComplaintLocation, setTargetComplaintLocation] = useState<any>(null);
 
-  const [activeSection, setActiveSection] = useState("COMMAND_CENTER");
+  const [activeSection, setActiveSection] = useState("COMPLAINTS");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [regionalLocs, setRegionalLocs] = useState<any[]>([]);
   const [forecastData, setForecastData] = useState<any>(null);
@@ -55,33 +55,39 @@ export default function FinancialFraudPortal() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
-    const s = await api.getDashboardSummary();
-    if (s) {
-      setSummaryData(s);
+    setDataLoadError(null);
+    try {
+      const [s, locs, fc, tc, ew, inv, logs] = await Promise.all([
+        api.getDashboardSummary(),
+        api.getRegionalRisk(),
+        api.getForecasts("7d"),
+        api.getThreatClusters(),
+        api.getEarlyWarnings(),
+        api.getInvestigations(),
+        api.getAuditLogs()
+      ]);
+
+      if (s) setSummaryData(s);
+      if (locs) setRegionalLocs(locs);
+      if (fc) setForecastData(fc);
+      if (tc) setThreatClusters(tc);
+      if (ew) setEarlyWarnings(ew);
+      if (inv) setInvestigations(inv);
+      if (logs) setAuditLogs(logs);
+
+      if (!s && !locs && !fc) {
+        setDataLoadError("Unable to establish live telemetry connection with central analytics server.");
+      }
+    } catch (err: any) {
+      console.error("Dashboard telemetry sync error:", err);
+      setDataLoadError(err?.message || "Dashboard telemetry connection timed out.");
+    } finally {
+      setIsLoading(false);
     }
-
-    const locs = await api.getRegionalRisk();
-    if (locs) setRegionalLocs(locs);
-
-    const fc = await api.getForecasts("7d");
-    if (fc) setForecastData(fc);
-
-    const tc = await api.getThreatClusters();
-    if (tc) setThreatClusters(tc);
-
-    const ew = await api.getEarlyWarnings();
-    if (ew) setEarlyWarnings(ew);
-
-    const inv = await api.getInvestigations();
-    if (inv) setInvestigations(inv);
-
-    const logs = await api.getAuditLogs();
-    if (logs) setAuditLogs(logs);
-
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -144,6 +150,7 @@ export default function FinancialFraudPortal() {
         onLogoutAdmin={() => {
           setIsAdminAuthenticated(false);
           setAdminOfficer(null);
+          setPendingComplaintCode("");
           setCurrentView("ACCEPTANCE");
         }}
         onNavigate={(view: any) => {
@@ -228,7 +235,7 @@ export default function FinancialFraudPortal() {
             <div className="flex items-center space-x-2">
               <span className="text-[10px] font-bold bg-white/15 text-white border border-white/25 px-3 py-1 rounded flex items-center space-x-1.5 font-mono shadow-sm">
                 <Shield className="w-3.5 h-3.5 text-yellow-300" />
-                <span>ADMIN LAW ENFORCEMENT OBSERVATORY & COMPLAINT TRACKER</span>
+                <span>ADMIN LAW ENFORCEMENT & COMPLAINT TRACKER</span>
               </span>
             </div>
           </div>
@@ -241,7 +248,16 @@ export default function FinancialFraudPortal() {
           />
 
           <div className="flex flex-1">
-            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+            <Sidebar
+              activeSection={activeSection}
+              setActiveSection={(section) => {
+                if (section === "REPORTS") {
+                  setPendingComplaintCode("");
+                  setTargetComplaintLocation(null);
+                }
+                setActiveSection(section);
+              }}
+            />
 
             <main className="flex-1 p-6 space-y-6 overflow-y-auto">
               {/* Title Banner in Royal Government Blue */}
@@ -252,7 +268,7 @@ export default function FinancialFraudPortal() {
                       ML CASHOUT FORECASTER
                     </span>
                     <h1 className="text-lg sm:text-xl font-black tracking-wide text-white uppercase font-sans">
-                      NATIONAL FINANCIAL CYBER THREAT COMMAND CENTER
+                      NATIONAL FINANCIAL CYBER THREAT & RISK MAP PORTAL
                     </h1>
                   </div>
                   <p className="text-xs text-blue-100 mt-1 font-medium">
@@ -262,110 +278,137 @@ export default function FinancialFraudPortal() {
 
                 {/* Telemetry KPI Pills */}
                 <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm min-w-[170px]">
                     <span className="text-blue-100 block text-[9px] font-sans">INGESTED FINANCIAL COMPLAINTS</span>
-                    <span className="font-black text-white text-base">
-                      {summaryData?.kpi_metrics?.total_complaints || 10000}
-                    </span>
+                    {isLoading && !summaryData ? (
+                      <div className="h-5 w-16 bg-white/30 animate-pulse rounded mt-1" />
+                    ) : (
+                      <span className="font-black text-white text-base">
+                        {summaryData?.kpi_metrics?.total_complaints || 10000}
+                      </span>
+                    )}
                   </div>
-                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm min-w-[150px]">
                     <span className="text-blue-100 block text-[9px] font-sans">TOTAL LOSS IMPAIRMENT</span>
-                    <span className="font-black text-yellow-300 text-base">
-                      ₹{((summaryData?.kpi_metrics?.total_financial_loss || 14500000) / 100000).toFixed(1)}L
-                    </span>
+                    {isLoading && !summaryData ? (
+                      <div className="h-5 w-20 bg-white/30 animate-pulse rounded mt-1" />
+                    ) : (
+                      <span className="font-black text-yellow-300 text-base">
+                        ₹{((summaryData?.kpi_metrics?.total_financial_loss || 14500000) / 100000).toFixed(1)}L
+                      </span>
+                    )}
                   </div>
-                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm">
+                  <div className="bg-white/15 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/25 shadow-sm min-w-[130px]">
                     <span className="text-blue-100 block text-[9px] font-sans">ACTIVE EARLY WARNINGS</span>
-                    <span className="font-black text-red-200 text-base">
-                      {earlyWarnings.length || 2}
-                    </span>
+                    {isLoading && !summaryData ? (
+                      <div className="h-5 w-12 bg-white/30 animate-pulse rounded mt-1" />
+                    ) : (
+                      <span className="font-black text-red-200 text-base">
+                        {earlyWarnings.length || 2}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Command Center Main Layout */}
-              {activeSection === "COMMAND_CENTER" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                    <div className="lg:col-span-2 flex flex-col">
-                      <IndiaRiskMap
-                        locations={regionalLocs}
-                        targetComplaintLocation={targetComplaintLocation}
-                        onSelectDistrict={() => setIsExplainOpen(true)}
-                      />
-                    </div>
-                    <div className="flex flex-col justify-between space-y-4">
-                      <ThreatDNACard
-                        dna={threatClusters[0]?.dna_metrics}
-                        onReviewClick={() => setIsExplainOpen(true)}
-                      />
-                      <PredictionHorizon data={forecastData} />
-                    </div>
-                  </div>
-
-                  <div className="w-full">
-                    <EntityGraph />
-                  </div>
-                </div>
-              )}
-
-              {activeSection === "COMPLAINTS" && (
-                <ComplaintsListView
-                  onSelectComplaint={(code, data) => {
-                    setPendingComplaintCode(code);
-                    if (data?.location) {
-                      setTargetComplaintLocation(data);
-                    }
-                    setActiveSection("REPORTS");
-                  }}
+              {/* Data Stream Disconnect Warning Banner */}
+              {dataLoadError && (
+                <ErrorState
+                  compact
+                  title="Telemetry Disconnected"
+                  message={dataLoadError}
+                  onRetry={loadData}
+                  retryLabel="Reconnect & Retry"
                 />
               )}
 
-              {(activeSection === "REPORTS" || activeSection === "COMPLAINT_INTELLIGENCE") && (
-                <div className="space-y-6 font-sans">
-                  {/* Tactical Reports Navigation Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-                    <button
-                      onClick={() => setActiveSection("COMPLAINTS")}
-                      className="flex items-center space-x-2 text-xs font-bold text-[#005A9C] hover:text-[#00487D] transition-colors cursor-pointer bg-blue-50/70 hover:bg-blue-100/70 px-3 py-1.5 rounded-lg border border-blue-200"
-                    >
-                      <ArrowLeft className="w-4 h-4 text-[#005A9C]" />
-                      <span>&larr; Back to Complaints Database</span>
-                    </button>
+              {activeSection === "ALERTS_INCIDENTS" && (
+                <ErrorBoundary moduleName="Automated Alerts & Telemetry Incidents">
+                  <AlertsIncidentsView adminUser={adminOfficer} />
+                </ErrorBoundary>
+              )}
 
-                    <div className="flex items-center space-x-2 font-mono">
-                      <span className="text-[10px] text-slate-500 font-bold">PREDICTED FORENSIC DOSSIER:</span>
-                      <span className="bg-red-50 text-red-700 font-black text-xs px-2.5 py-1 rounded border border-red-200">
-                        #{pendingComplaintCode}
-                      </span>
-                    </div>
-                  </div>
-
-                  <AdminComplaintLocationInspector
-                    adminUser={adminOfficer}
-                    initialComplaintCode={pendingComplaintCode}
-                    onSelectComplaintLocation={(locData) => setTargetComplaintLocation(locData)}
-                    onLogoutAdmin={() => {
-                      setIsAdminAuthenticated(false);
-                      setAdminOfficer(null);
-                      setCurrentView("ACCEPTANCE");
+              {activeSection === "COMPLAINTS" && (
+                <ErrorBoundary moduleName="Complaints Repository">
+                  <ComplaintsListView
+                    onSelectComplaint={(code, data) => {
+                      setPendingComplaintCode(code);
+                      if (data?.location) {
+                        setTargetComplaintLocation(data);
+                      }
+                      setActiveSection("REPORTS");
                     }}
                   />
+                </ErrorBoundary>
+              )}
+
+              {(activeSection === "REPORTS" || activeSection === "COMPLAINT_INTELLIGENCE") && (
+                <ErrorBoundary moduleName="Forensic Dossier & Location Inspector">
+                  <div className="space-y-6 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                      <button
+                        onClick={() => setActiveSection("COMPLAINTS")}
+                        className="flex items-center space-x-2 text-xs font-bold text-[#005A9C] hover:text-[#00487D] transition-colors cursor-pointer bg-blue-50/70 hover:bg-blue-100/70 px-3 py-1.5 rounded-lg border border-blue-200"
+                      >
+                        <ArrowLeft className="w-4 h-4 text-[#005A9C]" />
+                        <span>&larr; Back to Complaints Database</span>
+                      </button>
+
+                      <div className="flex items-center space-x-2 font-mono">
+                        <span className="text-[10px] text-slate-500 font-bold">PREDICTED FORENSIC DOSSIER:</span>
+                        {pendingComplaintCode ? (
+                          <span className="bg-red-50 text-red-700 font-black text-xs px-2.5 py-1 rounded border border-red-200">
+                            #{pendingComplaintCode}
+                          </span>
+                        ) : (
+                          <span className="bg-slate-100 text-slate-500 font-bold text-xs px-2.5 py-1 rounded border border-slate-200">
+                            NO CASE SELECTED
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <AdminComplaintLocationInspector
+                      adminUser={adminOfficer}
+                      initialComplaintCode={pendingComplaintCode}
+                      onSelectComplaintLocation={(locData) => setTargetComplaintLocation(locData)}
+                      onNavigateToComplaints={() => setActiveSection("COMPLAINTS")}
+                      onLogoutAdmin={() => {
+                        setIsAdminAuthenticated(false);
+                        setAdminOfficer(null);
+                        setCurrentView("ACCEPTANCE");
+                      }}
+                    />
+                    <IndiaRiskMap
+                      locations={regionalLocs}
+                      targetComplaintLocation={targetComplaintLocation}
+                      onSelectDistrict={() => setIsExplainOpen(true)}
+                    />
+                  </div>
+                </ErrorBoundary>
+              )}
+
+              {activeSection === "CYBER_RISK_MAP" && (
+                <ErrorBoundary moduleName="Cyber Risk Interactive Map">
                   <IndiaRiskMap
                     locations={regionalLocs}
                     targetComplaintLocation={targetComplaintLocation}
                     onSelectDistrict={() => setIsExplainOpen(true)}
                   />
-                </div>
+                </ErrorBoundary>
               )}
 
-              {activeSection === "MODEL_OBSERVATORY" && <ModelObservatoryView />}
+              {activeSection === "ENTITY_INTELLIGENCE" && (
+                <ErrorBoundary moduleName="Entity Intelligence Graph">
+                  <EntityGraph />
+                </ErrorBoundary>
+              )}
 
-              {activeSection === "CYBER_RISK_MAP" && <IndiaRiskMap locations={regionalLocs} />}
-
-              {activeSection === "ENTITY_INTELLIGENCE" && <EntityGraph />}
-
-              {activeSection === "SETTINGS" && <AdminSettingsView adminUser={adminOfficer} />}
+              {activeSection === "SETTINGS" && (
+                <ErrorBoundary moduleName="Admin Configuration & Settings">
+                  <AdminSettingsView adminUser={adminOfficer} />
+                </ErrorBoundary>
+              )}
             </main>
           </div>
 
@@ -387,7 +430,7 @@ export default function FinancialFraudPortal() {
         onSuccessAuth={(officerInfo, targetCode) => {
           setIsAdminAuthenticated(true);
           setAdminOfficer(officerInfo);
-          if (targetCode) setPendingComplaintCode(targetCode);
+          setPendingComplaintCode(targetCode || "");
           setCurrentView("RISK_MAP_ANALYTICS");
         }}
       />

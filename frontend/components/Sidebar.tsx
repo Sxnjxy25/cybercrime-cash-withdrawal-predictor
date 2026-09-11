@@ -2,8 +2,7 @@
 
 import React from "react";
 import {
-  LayoutDashboard, Map, ShieldAlert,
-  Network, Settings, FileSpreadsheet, Cpu
+  Map, ShieldAlert, Network, Settings, FileSpreadsheet, Siren
 } from "lucide-react";
 
 interface SidebarProps {
@@ -12,11 +11,10 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { id: "COMMAND_CENTER", label: "COMMAND CENTER", icon: LayoutDashboard, badge: "LIVE" },
+  { id: "ALERTS_INCIDENTS", label: "ALERTS & INCIDENTS", icon: Siren, badge: "99+ CRIT" },
   { id: "COMPLAINTS", label: "COMPLAINTS", icon: ShieldAlert, badge: "10K+" },
-  { id: "MODEL_OBSERVATORY", label: "ML MODEL OBSERVATORY", icon: Cpu, badge: "AI" },
+  { id: "CYBER_RISK_MAP", label: "CYBER RISK MAP", icon: Map, badge: "LIVE" },
   { id: "REPORTS", label: "REPORTS", icon: FileSpreadsheet },
-  { id: "CYBER_RISK_MAP", label: "CYBER RISK MAP", icon: Map },
   { id: "ENTITY_INTELLIGENCE", label: "ENTITY INTELLIGENCE", icon: Network },
   { id: "SETTINGS", label: "SETTINGS", icon: Settings },
 ];

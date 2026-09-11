@@ -24,7 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSimulateDemo, onResetDemo, isD
               CYBERPREDICT X
             </h1>
             <p className="text-[10px] text-slate-500 font-mono tracking-wider uppercase font-semibold">
-              NATIONAL THREAT PREDICTION OBSERVATORY
+              NATIONAL THREAT PREDICTION & RISK INTELLIGENCE
             </p>
           </div>
         </div>

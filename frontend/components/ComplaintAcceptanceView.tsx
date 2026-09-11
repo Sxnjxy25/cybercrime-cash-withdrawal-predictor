@@ -83,6 +83,7 @@ export const ComplaintAcceptanceView: React.FC<ComplaintAcceptanceViewProps> = (
             {/* Centered Action Button to Proceed to Step 2 */}
             <div className="flex justify-center pt-2">
               <button
+                id="btn-accept-terms"
                 onClick={onAccept}
                 className="bg-[#0a3866] hover:bg-[#06294d] text-white text-xs sm:text-sm font-bold py-3.5 px-8 rounded-lg shadow-xl border border-blue-300/40 transition-all flex items-center space-x-2 cursor-pointer uppercase tracking-wider"
               >

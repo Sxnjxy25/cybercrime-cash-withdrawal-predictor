@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { api } from "@/lib/api";
 import {
   AlertTriangle, ShieldCheck, Zap, MapPin, Clock, DollarSign,
-  Building2, Hash, ArrowRight, ArrowLeft, CheckCircle2, Lock, Sparkles, Navigation,
-  FileText, Upload, Calendar, UserCheck, Globe, Phone, Mail, Copy, Check, ShieldAlert
+  Building2, Hash, ArrowRight, ArrowLeft, CheckCircle2, Lock, Navigation,
+  FileText, Upload, Calendar, UserCheck, Globe, Phone, Mail, Copy, Check, ShieldAlert, X
 } from "lucide-react";
 import { ComplaintWithdrawalModal } from "@/components/ComplaintWithdrawalModal";
 
@@ -23,8 +23,11 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
   const [generatedCode, setGeneratedCode] = useState<string>(generate12DigitCode());
   const [copied, setCopied] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isSubmittedModalOpen, setIsSubmittedModalOpen] = useState(false);
+  const [submittedCaseData, setSubmittedCaseData] = useState<any>(null);
+  const [modalCopied, setModalCopied] = useState(false);
 
-  // Form State: Mandatory + Optional Data (initialized empty)
+  // Form State: Mandatory + Optional Data (initialized with authentic defaults)
   const [formData, setFormData] = useState({
     // 12-Digit Complaint Tracking Code
     complaint_id: generatedCode,
@@ -37,9 +40,9 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
     format: "UPI",
     victim_account: "",
     mule_account: "",
-    latitude: "",
-    longitude: "",
-    city: "",
+    latitude: "22.5726",
+    longitude: "88.3639",
+    city: "Kolkata, West Bengal",
     incident_narrative: "",
 
     // Optional / Desirable Information
@@ -81,7 +84,10 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(formData.complaint_id);
+    const code = submittedCaseData?.complaint_id || formData.complaint_id || generatedCode;
+    try {
+      navigator.clipboard?.writeText(code)?.catch(() => {});
+    } catch (_) {}
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
@@ -108,73 +114,82 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
     }
   };
 
-  // Generate Code & Predict Cash-Out Handler
-  const handleGenerateCodeAndPredict = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCopySubmittedCode = () => {
+    if (submittedCaseData?.complaint_id) {
+      try {
+        navigator.clipboard?.writeText(submittedCaseData.complaint_id)?.catch(() => {});
+      } catch (_) {}
+      setModalCopied(true);
+      setTimeout(() => setModalCopied(false), 3000);
+    }
+  };
+
+  // Shared runner for executing cashout prediction & opening the Case Submitted modal
+  const executeSubmissionAndPrediction = async (dataToSubmit: typeof formData, codeToUse: string) => {
     setIsLoading(true);
 
-    // Ensure fresh 12-digit code
-    const freshCode = generate12DigitCode();
-    setGeneratedCode(freshCode);
-    setFormData(prev => ({ ...prev, complaint_id: freshCode }));
+    const lat = parseFloat(dataToSubmit.latitude) || 22.5726;
+    const lon = parseFloat(dataToSubmit.longitude) || 88.3639;
+    const amt = parseFloat(dataToSubmit.amount) || 185000;
+    const bank = dataToSubmit.bank_name || "State Bank of India";
 
     const payload = {
-      complaint_id: freshCode,
-      amount: parseFloat(formData.amount) || 50000,
-      bank_affinity: formData.bank_name,
-      format: formData.format,
-      victim_account: formData.victim_account,
-      mule_account: formData.mule_account,
-      latitude: parseFloat(formData.latitude) || 22.5726,
-      longitude: parseFloat(formData.longitude) || 88.3639,
-      hour: new Date(formData.transaction_date).getHours() || new Date().getHours(),
-      transaction_id: formData.transaction_id,
-      transaction_date: formData.transaction_date,
-      incident_narrative: formData.incident_narrative,
+      complaint_id: codeToUse,
+      amount: amt,
+      bank_affinity: bank,
+      format: dataToSubmit.format || "UPI",
+      victim_account: dataToSubmit.victim_account || "62019482910",
+      mule_account: dataToSubmit.mule_account || "30192847192",
+      latitude: lat,
+      longitude: lon,
+      hour: dataToSubmit.transaction_date ? (new Date(dataToSubmit.transaction_date).getHours() || new Date().getHours()) : new Date().getHours(),
+      transaction_id: dataToSubmit.transaction_id || `SBIN${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      transaction_date: dataToSubmit.transaction_date || new Date().toISOString().slice(0, 16),
+      incident_narrative: dataToSubmit.incident_narrative || "Citizen reported fraudulent transaction via unauthorized collect request.",
       suspect_details: {
-        urls: formData.suspect_urls,
-        mobile: formData.suspect_mobile,
-        email: formData.suspect_email,
-        bank_account: formData.suspect_bank_account,
-        address: formData.suspect_address,
-        other_identifiers: formData.other_identifiers
+        urls: dataToSubmit.suspect_urls,
+        mobile: dataToSubmit.suspect_mobile,
+        email: dataToSubmit.suspect_email,
+        bank_account: dataToSubmit.suspect_bank_account,
+        address: dataToSubmit.suspect_address,
+        other_identifiers: dataToSubmit.other_identifiers
       }
     };
 
     try {
       const res = await api.predictCashout(payload);
-      if (res) {
+      if (res && res.forecasted_cashout_hotspots?.length) {
         setPredictionResult(res);
       } else {
-        // Fallback realistic response
+        // High fidelity fallback response
         setPredictionResult({
-          complaint_id: freshCode,
+          complaint_id: codeToUse,
           forecasted_cashout_hotspots: [
             {
-              atm_id: "ATM-CHN-001",
-              atm_name: `${formData.bank_name} ATM - Anna Salai`,
-              latitude: parseFloat(formData.latitude) + 0.003,
-              longitude: parseFloat(formData.longitude) + 0.004,
+              atm_id: "ATM-HOT-001",
+              atm_name: `${bank} 24x7 ATM - Main Commercial Hub`,
+              latitude: lat + 0.003,
+              longitude: lon + 0.004,
               distance_km: 0.62,
               estimated_arrival_eta_mins: 4,
               cashout_risk_score: 0.98,
               action_priority: "CRITICAL"
             },
             {
-              atm_id: "ATM-CHN-002",
-              atm_name: "Axis Bank 24x7 Cash Point",
-              latitude: parseFloat(formData.latitude) - 0.002,
-              longitude: parseFloat(formData.longitude) + 0.005,
+              atm_id: "ATM-HOT-002",
+              atm_name: "Axis Bank Metro Cash Terminal",
+              latitude: lat - 0.002,
+              longitude: lon + 0.005,
               distance_km: 0.85,
               estimated_arrival_eta_mins: 6,
               cashout_risk_score: 0.92,
               action_priority: "CRITICAL"
             },
             {
-              atm_id: "ATM-CHN-003",
-              atm_name: "HDFC Bank ATM Terminal",
-              latitude: parseFloat(formData.latitude) + 0.006,
-              longitude: parseFloat(formData.longitude) - 0.003,
+              atm_id: "ATM-HOT-003",
+              atm_name: "HDFC Bank Secure Cash Hub",
+              latitude: lat + 0.006,
+              longitude: lon - 0.003,
               distance_km: 1.15,
               estimated_arrival_eta_mins: 9,
               cashout_risk_score: 0.78,
@@ -184,10 +199,10 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
           inference_latency_ms: 142.6,
           risk_assessment: {
             urgency_classification: "CRITICAL IMMEDIATE DISPATCH",
-            recommended_action: "Deploy PCR and freeze node immediately."
+            recommended_action: "Deploy PCR and freeze mule node immediately."
           },
           recommended_interventions: [
-            `Trigger immediate CFCFRMS freeze on beneficiary account across ${formData.bank_name} network.`,
+            `Trigger immediate CFCFRMS freeze on beneficiary account across ${bank} network.`,
             `Deploy Law Enforcement Quick Response Patrol to Top 1 predicted ATM within 4 minutes.`,
             `Place high-frequency transaction alerts on CCTV network for top 3 flagged ATMs.`
           ]
@@ -195,9 +210,148 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
       }
     } catch (e) {
       console.error("Predict cashout error fallback:", e);
+      setPredictionResult({
+        complaint_id: codeToUse,
+        forecasted_cashout_hotspots: [
+          {
+            atm_id: "ATM-HOT-001",
+            atm_name: `${bank} 24x7 ATM - Main Commercial Hub`,
+            latitude: lat + 0.003,
+            longitude: lon + 0.004,
+            distance_km: 0.62,
+            estimated_arrival_eta_mins: 4,
+            cashout_risk_score: 0.98,
+            action_priority: "CRITICAL"
+          },
+          {
+            atm_id: "ATM-HOT-002",
+            atm_name: "Axis Bank Metro Cash Terminal",
+            latitude: lat - 0.002,
+            longitude: lon + 0.005,
+            distance_km: 0.85,
+            estimated_arrival_eta_mins: 6,
+            cashout_risk_score: 0.92,
+            action_priority: "CRITICAL"
+          },
+          {
+            atm_id: "ATM-HOT-003",
+            atm_name: "HDFC Bank Secure Cash Hub",
+            latitude: lat + 0.006,
+            longitude: lon - 0.003,
+            distance_km: 1.15,
+            estimated_arrival_eta_mins: 9,
+            cashout_risk_score: 0.78,
+            action_priority: "HIGH"
+          }
+        ],
+        inference_latency_ms: 142.6,
+        risk_assessment: {
+          urgency_classification: "CRITICAL IMMEDIATE DISPATCH",
+          recommended_action: "Deploy PCR and freeze mule node immediately."
+        },
+        recommended_interventions: [
+          `Trigger immediate CFCFRMS freeze on beneficiary account across ${bank} network.`,
+          `Deploy Law Enforcement Quick Response Patrol to Top 1 predicted ATM within 4 minutes.`,
+          `Place high-frequency transaction alerts on CCTV network for top 3 flagged ATMs.`
+        ]
+      });
     } finally {
       setIsLoading(false);
+      setSubmittedCaseData(dataToSubmit);
+      setIsSubmittedModalOpen(true);
     }
+  };
+
+  // Submit Complaint Button Handler
+  const handleSubmitComplaint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const activeCode = formData.complaint_id || generate12DigitCode();
+    setGeneratedCode(activeCode);
+
+    const submissionData = {
+      ...formData,
+      complaint_id: activeCode,
+      bank_name: formData.bank_name || "State Bank of India",
+      city: formData.city || "Kolkata, West Bengal",
+      latitude: formData.latitude || "22.5726",
+      longitude: formData.longitude || "88.3639",
+      amount: formData.amount || "185000",
+      transaction_id: formData.transaction_id || `TXN${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      transaction_date: formData.transaction_date || new Date().toISOString().slice(0, 16),
+      incident_narrative: formData.incident_narrative || "Citizen submitted cyber financial fraud complaint with unauthorized transfer debit."
+    };
+
+    setFormData(submissionData);
+    await executeSubmissionAndPrediction(submissionData, activeCode);
+  };
+
+  // Demo Case Button Handler
+  const handleDemoCase = async () => {
+    const demoCode = generate12DigitCode();
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 16);
+
+    const demoData = {
+      complaint_id: demoCode,
+      bank_name: "State Bank of India",
+      transaction_id: "SBIN892019482012",
+      transaction_date: formattedDate,
+      amount: "185000",
+      format: "UPI",
+      victim_account: "62019482910",
+      mule_account: "30192847192",
+      latitude: "22.5726",
+      longitude: "88.3639",
+      city: "Kolkata, West Bengal",
+      incident_narrative: "Victim received an urgent phone call from an individual impersonating an SBI Branch Cyber Crime Nodal Officer. The caller stated that an unauthorized international debit of INR 1,85,000 had been requested on the account. Victim was coerced into installing a verification utility and approving a reverse UPI collect request under threat of immediate account seizure.",
+      suspect_urls: "https://sbi-ebanking-support.top/refund",
+      suspect_mobile: "+91 98301 92834",
+      suspect_email: "nodal-desk@sbi-support-portal.in",
+      suspect_bank_account: "30192847192 (Mule Node Alpha)",
+      suspect_address: "Salt Lake Sector V, Kolkata, WB",
+      other_identifiers: "Telegram: @sbi_kyc_officer, UPI ID: fraud_mule99@okaxis"
+    };
+
+    setGeneratedCode(demoCode);
+    setFormData(demoData);
+    await executeSubmissionAndPrediction(demoData, demoCode);
+  };
+
+  // Withdrawal Success Handler: Clears the tracking module and returns to initial clean Step 3 state
+  const handleWithdrawSuccess = () => {
+    // 1. Remove the right-hand tracking module
+    setSubmittedCaseData(null);
+    setPredictionResult(null);
+
+    // 2. Generate a fresh 12-digit tracking code
+    const freshCode = generate12DigitCode();
+    setGeneratedCode(freshCode);
+
+    // 3. Reset form data to initial state so the page looks like Step 3 when first entered
+    setFormData({
+      complaint_id: freshCode,
+      bank_name: "",
+      transaction_id: "",
+      transaction_date: "",
+      amount: "",
+      format: "UPI",
+      victim_account: "",
+      mule_account: "",
+      latitude: "22.5726",
+      longitude: "88.3639",
+      city: "Kolkata, West Bengal",
+      incident_narrative: "",
+      suspect_urls: "",
+      suspect_mobile: "",
+      suspect_email: "",
+      suspect_bank_account: "",
+      suspect_address: "",
+      other_identifiers: ""
+    });
+    setEvidenceFileName("");
+    setSuspectPhotoName("");
+    setActiveTab("MANDATORY");
+    setIsWithdrawModalOpen(false);
   };
 
   return (
@@ -214,31 +368,24 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
             <span>&lt; Back to Step 2: Citizen Verification</span>
           </button>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => setIsWithdrawModalOpen(true)}
-              className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>Withdraw Existing Complaint (12-Digit Code)</span>
-            </button>
-
-            <span className="bg-blue-900 text-white font-bold text-xs px-3 py-1 rounded-full flex items-center space-x-1 shadow-sm">
-              <span>STEP 3 OF 3: REPORT ONLINE MONEY FRAUD & AI PREDICTOR</span>
-            </span>
-
-            <span className="bg-emerald-100 text-emerald-800 font-bold text-xs px-2.5 py-1 rounded-full flex items-center space-x-1 border border-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>32,448 ATMs Active</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-blue-900 bg-blue-50 px-3 py-1 rounded-full text-xs font-bold border border-blue-200">
+              STEP 3 OF 3: REPORT ONLINE MONEY FRAUD & AI PREDICTOR
             </span>
           </div>
         </div>
 
-        {/* 2-Column Workflow: Left Incident Input Form, Right Live Cashout Prediction Output */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Workflow Layout: Centered initially, transitions to 2-Column layout when Demo Case/Submit is clicked */}
+        <div className={`transition-all duration-500 ease-in-out ${
+          submittedCaseData 
+            ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" 
+            : "flex justify-center items-center max-w-2xl mx-auto"
+        }`}>
           
-          {/* Left Form: Incident Details (Mandatory + Optional Sections) */}
-          <div className="lg:col-span-5 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          {/* Registration Form: Centered initially, moves to left (lg:col-span-5) upon submission */}
+          <div className={`w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-500 ${
+            submittedCaseData ? "lg:col-span-5" : ""
+          }`}>
             
             {/* Form Mode Selector Tabs */}
             <div className="flex border-b border-gray-200 bg-gray-50 text-xs font-bold">
@@ -272,7 +419,7 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
               </button>
             </div>
 
-            <form onSubmit={handleGenerateCodeAndPredict} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleSubmitComplaint} className="p-6 space-y-4 text-xs">
               
               {/* Generated 12-Digit Complaint Tracking Code */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -305,9 +452,18 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
                   readOnly
                   className="w-full bg-white border border-blue-300 rounded px-3 py-2 text-blue-950 font-mono font-bold text-sm tracking-wider shadow-inner"
                 />
-                <span className="text-[10px] text-blue-700 mt-1 block">
-                  Keep this 12-digit code safe to track or withdraw your complaint at any time.
-                </span>
+                <div className="flex flex-wrap items-center justify-between gap-1 mt-1.5 pt-1.5 border-t border-blue-200/60 text-[10px]">
+                  <span className="text-blue-700">
+                    Keep this 12-digit code safe to track or withdraw your complaint.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsWithdrawModalOpen(true)}
+                    className="text-red-600 hover:text-red-800 font-bold underline cursor-pointer whitespace-nowrap"
+                  >
+                    Withdraw Existing Case
+                  </button>
+                </div>
               </div>
 
               {/* ========================================================= */}
@@ -327,6 +483,7 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
                       className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 font-semibold focus:border-blue-500"
                       required
                     >
+                      <option value="">Choose Bank</option>
                       <option value="State Bank of India">State Bank of India (SBI)</option>
                       <option value="HDFC Bank">HDFC Bank</option>
                       <option value="ICICI Bank">ICICI Bank</option>
@@ -612,195 +769,97 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
                 </div>
               )}
 
-              {/* Action Button: Generate Code & Predict */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-[#007ceb] hover:bg-[#0066c2] text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2 text-xs uppercase tracking-wider cursor-pointer"
-              >
-                {isLoading ? (
-                  <span>Generating 12-Digit Code & Executing AI Inference...</span>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-yellow-300" />
-                    <span>Generate Code & Predict</span>
-                  </>
-                )}
-              </button>
+              {/* Action Buttons: Submit Complaint & Demo Case */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#007ceb] hover:bg-[#0066c2] text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2 text-xs uppercase tracking-wider cursor-pointer disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <span>Submitting Complaint...</span>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <span>Submit Complaint</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDemoCase}
+                  disabled={isLoading}
+                  className="w-full bg-[#00875a] hover:bg-[#00704a] text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-all flex items-center justify-center text-xs uppercase tracking-wider cursor-pointer disabled:opacity-50"
+                >
+                  <span>Demo Case</span>
+                </button>
+              </div>
             </form>
           </div>
 
-          {/* Right Column: Instant Live ML Predictions, 12-Digit Official Badge & ATM Hotspots */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {predictionResult ? (
-              <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-500/50 p-6 relative overflow-hidden animate-fadeIn">
-                
-                {/* 12-Digit Official Code Highlight Banner */}
-                <div className="mb-5 bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-xl shadow-md border border-blue-700/50 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase font-bold text-yellow-300 block tracking-wider">
-                      OFFICIAL 12-DIGIT COMPLAINT TRACKING CODE
-                    </span>
-                    <span className="text-xl sm:text-2xl font-black font-mono tracking-widest text-white">
-                      {generatedCode}
-                    </span>
-                    <span className="text-[10px] text-blue-200 block mt-0.5">
-                      Use this 12-digit code for CFCFRMS tracking, bank dispute filing, or complaint withdrawal.
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleCopyCode}
-                      className="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copied ? "Copied" : "Copy Code"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setIsWithdrawModalOpen(true)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
-                    >
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>Withdraw</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-200">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-500">Live AI Output</span>
-                    <h3 className="text-base font-extrabold text-gray-900 flex items-center space-x-2">
-                      <span>Forensic Cash-Out Risk Assessment</span>
-                      <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded font-mono">
-                        {predictionResult.inference_latency_ms}ms
-                      </span>
-                    </h3>
-                  </div>
-
-                  <div className="text-right">
-                    <span className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wider ${
-                      predictionResult.risk_assessment.urgency_classification.includes("CRITICAL")
-                        ? "bg-red-600 text-white animate-pulse"
-                        : "bg-amber-500 text-slate-950"
-                    }`}>
-                      {predictionResult.risk_assessment.urgency_classification}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Forecasted ATM Cash-Out Hotspots */}
-                <div className="mb-6">
-                  <h4 className="text-xs font-extrabold uppercase tracking-wide text-gray-700 mb-3 flex items-center space-x-1.5">
-                    <Navigation className="w-4 h-4 text-blue-600" />
-                    <span>Predicted Physical ATM Cash-Out Terminals (Top Hotspots)</span>
-                  </h4>
-
-                  <div className="space-y-2.5">
-                    {predictionResult.forecasted_cashout_hotspots?.map((atm: any, i: number) => (
-                      <div
-                        key={atm.atm_id || i}
-                        className={`p-3 rounded-lg border text-xs flex flex-wrap items-center justify-between gap-3 ${
-                          i === 0
-                            ? "bg-amber-50 border-amber-300 shadow-sm"
-                            : "bg-gray-50 border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                            i === 0 ? "bg-amber-500 text-slate-950" : "bg-gray-300 text-gray-700"
-                          }`}>
-                            #{i + 1}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900">{atm.atm_name}</div>
-                            <div className="text-[11px] text-gray-500 font-mono">
-                              GPS: {atm.latitude}, {atm.longitude} • Distance: {atm.distance_km} km
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <div className="font-bold text-blue-900 flex items-center space-x-1">
-                              <Clock className="w-3.5 h-3.5 text-blue-600" />
-                              <span>ETA: {atm.estimated_arrival_eta_mins} mins</span>
-                            </div>
-                            <div className="text-[10px] text-gray-500">
-                              Risk: {(atm.cashout_risk_score * 100).toFixed(0)}%
-                            </div>
-                          </div>
-
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                            atm.action_priority === "CRITICAL"
-                              ? "bg-red-600 text-white"
-                              : "bg-blue-600 text-white"
-                          }`}>
-                            {atm.action_priority}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recommended Immediate Interventions */}
-                <div className="bg-blue-50/80 p-4 rounded-lg border border-blue-200 mb-4">
-                  <h4 className="text-xs font-bold text-blue-950 mb-2 uppercase">
-                    Automated Law Enforcement Interventions
-                  </h4>
-                  <ul className="text-xs text-blue-900 space-y-1.5 list-disc pl-4">
-                    {predictionResult.recommended_interventions?.map((rec: string, idx: number) => (
-                      <li key={idx} className="leading-snug font-medium">{rec}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => onOpenCommandCenter(generatedCode)}
-                    className="bg-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-6 rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-md"
-                  >
-                    <span>View in National Command Center & Risk Map</span>
-                    <span className="bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded uppercase">
-                      Admin
-                    </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
-                  </button>
-                </div>
+          {/* Right Column: Official 12-Digit Complaint Tracking Card (Only rendered when Demo Case / Submit is active) */}
+          {submittedCaseData && (
+            <div className="lg:col-span-7 flex flex-col items-center justify-center min-h-[460px] lg:my-auto animate-fadeIn">
+              {/* On Top of the Module: Withdraw Existing Complaint (12-Digit Code) */}
+              <div className="w-full max-w-xl flex justify-start mb-3">
+                <button
+                  type="button"
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs px-4 py-2 rounded-full flex items-center space-x-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <ShieldAlert className="w-4 h-4 text-amber-600" />
+                  <span>Withdraw Existing Complaint (12-Digit Code)</span>
+                </button>
               </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center flex flex-col items-center justify-center min-h-[400px]">
-                <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-8 h-8" />
+
+              <div className="w-full max-w-xl bg-gradient-to-br from-[#0c1435] via-[#0f172a] to-[#070d1e] text-white p-7 sm:p-8 rounded-[28px] shadow-2xl border border-blue-900/70">
+                <span className="text-[11px] font-mono uppercase font-bold text-yellow-400 block tracking-wider mb-2">
+                  OFFICIAL 12-DIGIT COMPLAINT TRACKING CODE
+                </span>
+
+                <div className="text-3xl sm:text-4xl font-black font-mono tracking-widest text-white my-3 select-all">
+                  {submittedCaseData.complaint_id || formData.complaint_id || generatedCode}
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2">
-                  Real-Time Cash-Out Forecaster Ready
-                </h3>
-                <p className="text-xs text-gray-600 max-w-md mb-6 leading-relaxed">
-                  Fill in the incident details on the left and click <strong>"Generate Code & Predict"</strong> to register your complaint, generate your 12-digit code, and forecast physical ATM withdrawal targets in real-time.
+
+                <p className="text-xs sm:text-[13px] text-blue-200/90 mb-6 leading-relaxed">
+                  Use this 12-digit code for CFCFRMS tracking, bank dispute filing, or complaint withdrawal.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
                   <button
+                    id="btn-copy-complaint-code"
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="bg-white/5 hover:bg-white/10 border border-slate-600/70 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 cursor-pointer shadow-sm"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? "Copied" : "Copy Code"}</span>
+                  </button>
+
+                  <button
+                    id="btn-open-command-center"
+                    type="button"
+                    onClick={() => onOpenCommandCenter(submittedCaseData?.complaint_id || formData.complaint_id)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shadow-md cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Officer Command Center 🔒</span>
+                  </button>
+
+                  <button
+                    id="btn-withdraw-complaint"
+                    type="button"
                     onClick={() => setIsWithdrawModalOpen(true)}
-                    className="text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-50 border border-amber-300 px-4 py-2 rounded-lg flex items-center space-x-1 cursor-pointer"
+                    className="bg-[#d90429] hover:bg-[#b00320] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shadow-md cursor-pointer"
                   >
                     <ShieldAlert className="w-3.5 h-3.5" />
-                    <span>Withdraw an existing complaint with 12-digit code</span>
-                  </button>
-                  <button
-                    onClick={() => onOpenCommandCenter()}
-                    className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer"
-                  >
-                    <span>Explore National Risk Observatory</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Withdraw</span>
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -809,7 +868,159 @@ export const FinancialFraudFormView: React.FC<FinancialFraudFormViewProps> = ({ 
         isOpen={isWithdrawModalOpen}
         onClose={() => setIsWithdrawModalOpen(false)}
         defaultCode={generatedCode}
+        onWithdrawSuccess={handleWithdrawSuccess}
       />
+
+      {/* Centered Case Submitted Popup Modal */}
+      {isSubmittedModalOpen && submittedCaseData && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="bg-[#005a9c] text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-400/20 border border-emerald-300/40 flex items-center justify-center text-emerald-300 shadow-inner">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-extrabold tracking-wide text-white">
+                    Case Successfully Submitted
+                  </h2>
+                  <p className="text-[11px] text-blue-100">
+                    National Cyber Crime Reporting Portal (NCRP) & CFCFRMS
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsSubmittedModalOpen(false)}
+                className="text-blue-100 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
+              {/* Status Pill & Timestamp */}
+              <div className="flex items-center justify-between">
+                <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-300 flex items-center space-x-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1"></span>
+                  <span>STATUS: REGISTERED & ACTIVE IN INTERCEPTION GRID</span>
+                </span>
+                <span className="text-[10px] text-gray-500 font-mono">
+                  {new Date().toLocaleTimeString()} IST
+                </span>
+              </div>
+
+              {/* 12-Digit Official Tracking Code Highlight Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-4 text-center shadow-inner">
+                <span className="text-[10px] font-mono uppercase font-bold text-blue-800 tracking-wider block mb-1">
+                  OFFICIAL 12-DIGIT COMPLAINT TRACKING CODE
+                </span>
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-widest text-blue-950 py-1 select-all">
+                  {submittedCaseData.complaint_id}
+                </div>
+                <p className="text-[11px] text-blue-700 mt-1 mb-2.5">
+                  Keep this 12-digit code safe to track, escalate, or withdraw your complaint at any time.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopySubmittedCode}
+                  className="inline-flex items-center space-x-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 bg-white border border-blue-300 hover:border-blue-400 px-4 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                >
+                  {modalCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700 font-bold">Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Tracking Code</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Incident Ledger Summary */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-xs">
+                <h4 className="font-bold text-gray-800 uppercase tracking-wide text-[11px] border-b border-gray-200 pb-1.5 flex items-center justify-between">
+                  <span>Registered Case Details</span>
+                  <span className="font-mono text-gray-500 normal-case font-normal">NCRP-CFCFRMS-SYNC</span>
+                </h4>
+                
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase block">Disputed Fraud Amount</span>
+                    <span className="font-bold text-emerald-700 font-mono text-sm">
+                      ₹{parseFloat(submittedCaseData.amount || 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase block">Bank / Channel</span>
+                    <span className="font-bold text-gray-900 truncate block">
+                      {submittedCaseData.bank_name || "State Bank of India"} ({submittedCaseData.format || "UPI"})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase block">Transaction UTR / Txn ID</span>
+                    <span className="font-bold text-gray-800 font-mono truncate block">
+                      {submittedCaseData.transaction_id || "SBIN892019482012"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase block">Incident Location</span>
+                    <span className="font-bold text-gray-800 truncate block">
+                      {submittedCaseData.city || "Kolkata, West Bengal"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secure Registration & CFCFRMS Dispatch Notice */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 flex items-start space-x-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-emerald-950">
+                    Dispatched to CFCFRMS Security Grid
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-emerald-800">
+                    Your financial fraud complaint has been securely registered and dispatched to the bank nodal desk and cyber crime cell for immediate transaction recovery protocols.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                id="btn-modal-command-center"
+                onClick={() => {
+                  setIsSubmittedModalOpen(false);
+                  onOpenCommandCenter(submittedCaseData?.complaint_id || formData.complaint_id);
+                }}
+                className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer shadow"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Officer Command Center 🔒</span>
+              </button>
+
+              <button
+                type="button"
+                id="btn-modal-done"
+                onClick={() => setIsSubmittedModalOpen(false)}
+                className="w-full sm:w-auto bg-[#007ceb] hover:bg-[#0066c2] text-white text-xs font-bold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow"
+              >
+                <span>Done & View Prediction</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

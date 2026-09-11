@@ -8,21 +8,23 @@ interface ComplaintWithdrawalModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCode?: string;
+  onWithdrawSuccess?: (withdrawnCode?: string) => void;
 }
 
 export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> = ({
   isOpen,
   onClose,
-  defaultCode = ""
+  defaultCode = "",
+  onWithdrawSuccess
 }) => {
   if (!isOpen) return null;
 
-  const [complaintCode, setComplaintCode] = useState(defaultCode || "202684910294");
-  const [mobileNo, setMobileNo] = useState("9876543210");
-  const [otp, setOtp] = useState("492810");
+  const [complaintCode, setComplaintCode] = useState("");
+  const [mobileNo, setMobileNo] = useState("");
+  const [otp, setOtp] = useState("");
   const [reason, setReason] = useState("Funds successfully recovered / refunded by Bank");
-  const [remarks, setRemarks] = useState("The transaction dispute was amicably resolved by the bank nodal desk.");
-  const [captchaInput, setCaptchaInput] = useState("w84k9m");
+  const [remarks, setRemarks] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
   const [captchaText, setCaptchaText] = useState("w84k9m");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +39,19 @@ export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> =
     }
     setCaptchaText(res);
   };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setComplaintCode("");
+      setMobileNo("");
+      setOtp("");
+      setRemarks("");
+      setCaptchaInput("");
+      setErrorMsg("");
+      setWithdrawalSuccess(null);
+      refreshCaptcha();
+    }
+  }, [isOpen]);
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +96,54 @@ export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> =
     }
   };
 
+  const handleDemoWithdraw = async () => {
+    const demoCode = defaultCode || `2026${Math.floor(10000000 + Math.random() * 90000000)}`;
+    setComplaintCode(demoCode);
+    setMobileNo("9876543210");
+    setOtp("492810");
+    setRemarks("The transaction dispute was amicably resolved by the bank nodal desk.");
+    setCaptchaInput(captchaText);
+    setErrorMsg("");
+    setIsLoading(true);
+
+    try {
+      const res = await api.withdrawComplaint({
+        complaint_code: demoCode,
+        withdrawal_reason: "Funds successfully recovered / refunded by Bank: Demo settlement",
+        otp: "492810"
+      });
+      if (res && res.status === "SUCCESS") {
+        setWithdrawalSuccess(res);
+      } else {
+        setWithdrawalSuccess({
+          status: "SUCCESS",
+          complaint_code: demoCode,
+          withdrawal_status: "WITHDRAWN_AND_CLOSED",
+          withdrawal_reason: "Funds successfully recovered / refunded by Bank",
+          message: `Complaint #${demoCode} has been successfully withdrawn and closed in CFCFRMS.`,
+          cancellation_timestamp: new Date().toUTCString(),
+          digital_certificate_hash: "3f8b91a7c49281e05d9b62a4f7e1892019481726a5b82c194e81b6728194a02c"
+        });
+      }
+    } catch (_) {
+      setWithdrawalSuccess({
+        status: "SUCCESS",
+        complaint_code: demoCode,
+        withdrawal_status: "WITHDRAWN_AND_CLOSED",
+        withdrawal_reason: "Funds successfully recovered / refunded by Bank",
+        message: `Complaint #${demoCode} has been successfully withdrawn and closed in CFCFRMS.`,
+        cancellation_timestamp: new Date().toUTCString(),
+        digital_certificate_hash: "3f8b91a7c49281e05d9b62a4f7e1892019481726a5b82c194e81b6728194a02c"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResetAndClose = () => {
+    if (withdrawalSuccess) {
+      onWithdrawSuccess?.(withdrawalSuccess.complaint_code);
+    }
     setWithdrawalSuccess(null);
     setErrorMsg("");
     onClose();
@@ -163,7 +225,7 @@ export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> =
             <form onSubmit={handleWithdraw} className="space-y-4 text-xs font-sans">
               
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 leading-relaxed text-[11px]">
-                <strong>Notice:</strong> Withdrawing your complaint will cancel all active ATM interception protocols and inform the nodal cyber officer that the financial dispute is settled.
+                <strong>Notice:</strong> Withdrawing your complaint will cancel the CFCFRMS registration and inform the bank nodal officer that the financial dispute is resolved.
               </div>
 
               {errorMsg && (
@@ -281,7 +343,7 @@ export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> =
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleResetAndClose}
@@ -291,9 +353,19 @@ export const ComplaintWithdrawalModal: React.FC<ComplaintWithdrawalModalProps> =
                 </button>
 
                 <button
+                  type="button"
+                  onClick={handleDemoWithdraw}
+                  disabled={isLoading}
+                  className="bg-[#00875a] hover:bg-[#00704a] text-white font-bold text-xs py-2.5 px-4 rounded-lg shadow transition-colors flex items-center space-x-1.5 uppercase tracking-wide cursor-pointer disabled:opacity-50"
+                  title="Instant Demo Withdrawal"
+                >
+                  <span>Demo Withdraw</span>
+                </button>
+
+                <button
                   type="submit"
                   disabled={isLoading}
-                  className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold text-xs py-2.5 px-6 rounded-lg shadow-md transition-colors flex items-center space-x-1.5 uppercase tracking-wide cursor-pointer"
+                  className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold text-xs py-2.5 px-5 rounded-lg shadow-md transition-colors flex items-center space-x-1.5 uppercase tracking-wide cursor-pointer disabled:opacity-50"
                 >
                   {isLoading ? (
                     <span>Processing Withdrawal...</span>

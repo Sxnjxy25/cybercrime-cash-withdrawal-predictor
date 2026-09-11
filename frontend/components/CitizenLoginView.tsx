@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { RefreshCw, ArrowLeft, ShieldCheck, Check, AlertCircle, ArrowRight, Lock, Sparkles } from "lucide-react";
+import { RefreshCw, ArrowLeft, ShieldCheck, Check, AlertCircle, ArrowRight, Lock } from "lucide-react";
 
 interface CitizenLoginViewProps {
   onSuccessLogin: () => void;
@@ -174,6 +174,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                     +91 ▾
                   </div>
                   <input
+                    id="input-citizen-mobile"
                     type="tel"
                     value={mobileNo}
                     onChange={(e) => setMobileNo(e.target.value)}
@@ -181,6 +182,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                     className="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-blue-500 text-xs font-semibold"
                   />
                   <button
+                    id="btn-get-otp"
                     type="button"
                     onClick={handleSendOtp}
                     className="bg-[#007ceb] hover:bg-[#0066c2] text-white px-3 py-2 rounded font-bold text-xs whitespace-nowrap transition-colors"
@@ -201,6 +203,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                   OTP: <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="input-citizen-otp"
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
@@ -220,6 +223,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                   </div>
 
                   <button
+                    id="btn-refresh-captcha"
                     type="button"
                     onClick={refreshCaptcha}
                     className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
@@ -229,6 +233,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                   </button>
 
                   <input
+                    id="input-citizen-captcha"
                     type="text"
                     value={captchaInput}
                     onChange={(e) => setCaptchaInput(e.target.value)}
@@ -241,6 +246,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
               {/* Action Buttons: Clear & Submit */}
               <div className="flex items-center justify-center space-x-3 pt-4">
                 <button
+                  id="btn-citizen-clear"
                   type="button"
                   onClick={handleClear}
                   className="bg-[#e53935] hover:bg-[#d32f2f] text-white px-6 py-2.5 rounded font-bold text-xs shadow-sm transition-colors cursor-pointer"
@@ -249,6 +255,7 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
                 </button>
 
                 <button
+                  id="btn-citizen-submit"
                   type="submit"
                   className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-6 py-2.5 rounded font-bold text-xs shadow-md transition-colors cursor-pointer flex items-center space-x-1.5 uppercase tracking-wide"
                 >
@@ -260,12 +267,12 @@ export const CitizenLoginView: React.FC<CitizenLoginViewProps> = ({ onSuccessLog
               {/* Quick Demo: Go to Next Step Button */}
               <div className="pt-3 border-t border-gray-200 mt-2">
                 <button
+                  id="btn-demo-step3"
                   type="button"
                   onClick={handleDemoGoToNextStep}
                   className="w-full bg-blue-50 hover:bg-blue-100 text-[#005A9C] border-2 border-dashed border-[#005A9C]/40 hover:border-[#005A9C] font-bold py-2.5 px-4 rounded-lg text-xs shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer font-mono"
                   title="Instant Demo Skip to Step 3"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-500" />
                   <span>DEMO: GO TO NEXT STEP (STEP 3)</span>
                   <ArrowRight className="w-4 h-4 text-[#005A9C]" />
                 </button>

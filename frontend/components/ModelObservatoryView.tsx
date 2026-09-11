@@ -7,11 +7,14 @@ import {
   BarChart3, Zap, ShieldCheck, Database, Layers, ArrowRight,
   TrendingUp, Clock, Building2, MapPin, Hash, Sparkles
 } from "lucide-react";
+import { KpiCardSkeleton, ChartSkeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export const ModelObservatoryView: React.FC = () => {
   const [modelSummary, setModelSummary] = useState<any>(null);
   const [evaluation, setEvaluation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isRetraining, setIsRetraining] = useState(false);
   const [retrainSuccessMsg, setRetrainSuccessMsg] = useState<string | null>(null);
 
@@ -39,6 +42,7 @@ export const ModelObservatoryView: React.FC = () => {
 
   const loadModelData = async () => {
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const [summaryRes, evalRes] = await Promise.all([
         api.getModelObservatory(),
@@ -46,8 +50,12 @@ export const ModelObservatoryView: React.FC = () => {
       ]);
       if (summaryRes) setModelSummary(summaryRes);
       if (evalRes) setEvaluation(evalRes);
-    } catch (e) {
+      if (!summaryRes && !evalRes) {
+        setErrorMsg("Unable to retrieve model performance data from backend observatory service.");
+      }
+    } catch (e: any) {
       console.error("Error fetching model observatory data:", e);
+      setErrorMsg(e?.message || "Failed to fetch model metrics. Connection timed out.");
     } finally {
       setIsLoading(false);
     }
@@ -144,15 +152,38 @@ export const ModelObservatoryView: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Telemetry Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] text-slate-500 font-bold uppercase block">Model Architecture</span>
-          <span className="text-sm font-black text-[#005A9C] font-mono mt-1 block truncate">
-            {activeModel?.model_type || "XGBClassifier"}
-          </span>
-          <span className="text-[10px] text-slate-400 font-mono">v2.1.0-Enhanced</span>
+      {/* Conditional Telemetry Content: Skeleton, ErrorState, or Active Observatory */}
+      {isLoading && !modelSummary ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <KpiCardSkeleton key={i} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartSkeleton title="ROC-AUC Discrimination Curve" height="h-72" />
+            <ChartSkeleton title="Feature Importance Vectors" height="h-72" />
+          </div>
         </div>
+      ) : errorMsg && !modelSummary ? (
+        <ErrorState
+          title="ML Observatory Stream Disconnected"
+          message={errorMsg}
+          errorCode="ERR_MODEL_METRICS_OFFLINE"
+          onRetry={loadModelData}
+          retryLabel="Reconnect & Fetch Metrics"
+        />
+      ) : (
+        <>
+          {/* KPI Telemetry Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-[10px] text-slate-500 font-bold uppercase block">Model Architecture</span>
+              <span className="text-sm font-black text-[#005A9C] font-mono mt-1 block truncate">
+                {activeModel?.model_type || "XGBClassifier"}
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">v2.1.0-Enhanced</span>
+            </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-[10px] text-slate-500 font-bold uppercase block">ROC-AUC Score</span>
@@ -469,6 +500,8 @@ export const ModelObservatoryView: React.FC = () => {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };

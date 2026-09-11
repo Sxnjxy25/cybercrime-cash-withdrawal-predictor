@@ -134,5 +134,23 @@ export const api = {
   updateProfile: (profile: { full_name: string; email: string; badge_id?: string }) => fetchWithAuth("/auth/profile", {
     method: "PUT",
     body: JSON.stringify(profile)
-  })
+  }),
+  getAlertsIncidents: (params: Record<string, any> = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        query.append(key, String(val));
+      }
+    });
+    const qs = query.toString();
+    return fetchWithAuth(`/alerts-incidents${qs ? `?${qs}` : ""}`);
+  },
+  getAlertsSummary: () => fetchWithAuth("/alerts-incidents/summary"),
+  getAlertDetails: (idOrCode: string) => fetchWithAuth(`/alerts-incidents/${encodeURIComponent(idOrCode)}`),
+  triageAlert: (idOrCode: string, payload: { status: string; notes?: string; assigned_to?: string }) => fetchWithAuth(`/alerts-incidents/${encodeURIComponent(idOrCode)}/triage`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  }),
+  simulateAlertTelemetry: () => fetchWithAuth("/alerts-incidents/simulate", { method: "POST" }),
+  getAlertsStreamUrl: () => `${API_BASE}/alerts-incidents/stream`
 };

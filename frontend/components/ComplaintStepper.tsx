@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, ShieldCheck, Lock, Sparkles } from "lucide-react";
+import { Check, ShieldCheck, Lock, FileText } from "lucide-react";
 
 interface ComplaintStepperProps {
   currentStep: 1 | 2 | 3;
@@ -17,7 +17,7 @@ export const ComplaintStepper: React.FC<ComplaintStepperProps> = ({
   const steps = [
     { num: 1, title: "Terms & Conditions", subtitle: "Acceptance & Legal Declaration", icon: ShieldCheck },
     { num: 2, title: "Citizen Verification & Checklist", subtitle: "Mobile OTP & Pre-Requisites", icon: Lock },
-    { num: 3, title: "Report Fraud & AI Cash-Out Predictor", subtitle: "Transaction Input & ATM Forecasting", icon: Sparkles },
+    { num: 3, title: "Report Fraud & AI Cash-Out Predictor", subtitle: "Transaction Input & ATM Forecasting", icon: FileText },
   ];
 
   return (

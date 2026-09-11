@@ -245,3 +245,57 @@ class ModelMetric(Base):
     data_quality_score = Column(Float, default=94.5)
     status = Column(String(20), default="ACTIVE") # ACTIVE, TESTING, ARCHIVED
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+class TelemetryIncident(Base):
+    __tablename__ = "telemetry_incidents"
+
+    id = Column(String(36), primary_key=True, default=gen_uuid)
+    incident_code = Column(String(50), unique=True, index=True, nullable=False) # e.g. INC-2026-9812 / ALT-EDR-4891
+    title = Column(String(255), nullable=False)
+    severity = Column(String(20), index=True, default="CRITICAL") # CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
+    source_type = Column(String(50), index=True, default="SIEM") # EDR, SIEM, FIREWALL, NDR, IAM, CLOUD_TRAIL
+    source_tool = Column(String(100), default="Splunk Enterprise") # CrowdStrike Falcon, Palo Alto NGFW, etc.
+    timestamp = Column(DateTime, index=True, default=datetime.utcnow)
+    triage_status = Column(String(50), index=True, default="NEW") # NEW, TRIAGED, ESCALATED, CONTAINED, RESOLVED, SUPPRESSED
+    target_host = Column(String(150), index=True, nullable=True) # e.g. DC-PROD-01.BANK.IN
+    target_ip = Column(String(50), index=True, nullable=True) # e.g. 10.240.12.89
+    source_ip = Column(String(50), index=True, nullable=True) # e.g. 185.220.101.5
+    mitre_tactic = Column(String(100), nullable=True) # Credential Access, Lateral Movement, etc.
+    mitre_technique = Column(String(150), nullable=True) # T1003.001 - LSASS Memory, etc.
+    detection_rule = Column(String(200), nullable=False) # EDR-MIMIKATZ-IN-MEMORY, etc.
+    event_count = Column(Integer, default=1) # Aggregated raw telemetry events
+    confidence_score = Column(Float, default=0.95) # 0.0 to 1.0
+    raw_payload = Column(JSON, nullable=True) # Raw sensor metadata/process execution
+    analyst_notes = Column(Text, nullable=True)
+    assigned_to = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PredictiveForecast(Base):
+    __tablename__ = "predictive_forecasts"
+
+    id = Column(String(36), primary_key=True, default=gen_uuid)
+    forecast_id = Column(String(50), unique=True, index=True, nullable=False)  # e.g. FCST-2026-001
+    forecast_type = Column(String(80), index=True, nullable=False)  # CASHOUT_HOTSPOT, ATTACK_VECTOR, GEOGRAPHIC_TARGETING, ANOMALY_SURGE, MULE_NETWORK_EXPANSION
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    severity_level = Column(String(20), index=True, default="HIGH")  # CRITICAL, HIGH, MEDIUM, LOW
+    confidence_score = Column(Float, default=0.75)  # 0.0–1.0 from XGBoost predict_proba
+    predicted_at = Column(DateTime, index=True, default=datetime.utcnow)  # When the forecast was generated
+    valid_until = Column(DateTime, nullable=True)  # Forecast expiry timestamp
+    target_region = Column(String(150), index=True, nullable=True)  # e.g. Maharashtra, West Bengal
+    target_district = Column(String(150), nullable=True)
+    target_lat = Column(Float, nullable=True)   # Geographic centroid latitude
+    target_lon = Column(Float, nullable=True)   # Geographic centroid longitude
+    predicted_amount_at_risk = Column(Float, default=0.0)  # ₹ exposure estimate
+    attack_vector = Column(String(80), nullable=True)  # UPI_SURGE, ATM_CLUSTER, PHISHING_WAVE, SIM_SWAP, MULE_LAYERING
+    ml_model_version = Column(String(80), default="xgboost-v2.1-prod")
+    feature_importances = Column(JSON, nullable=True)  # XAI weights: [{"factor": "Amount", "weight": 0.35}]
+    hotspot_coordinates = Column(JSON, nullable=True)  # [{"lat": 19.07, "lon": 72.87, "risk_score": 0.91, "atm_id": "ATM-019-1"}]
+    recommended_actions = Column(JSON, nullable=True)  # ["Freeze account at SBI", "Deploy patrol..."]
+    status = Column(String(30), index=True, default="ACTIVE")  # ACTIVE, EXPIRED, ACTIONED, SUPPRESSED
+    actioned_by = Column(String(100), nullable=True)
+    actioned_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
