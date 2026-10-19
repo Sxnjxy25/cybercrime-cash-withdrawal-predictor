@@ -43,6 +43,8 @@ Thumbs.db
 capture_*.js
 frontend/capture_*.js
 test_*.js
+!test_all_buttons_playwright.js
+!frontend/test_*.js
 debug_*.js
 *.png
 *.jpg
@@ -50,5 +52,7 @@ debug_*.js
 *.csv
 *.log
 .agents/
+.snapshots/
 frontend/inspect_live_app.js
+
 
